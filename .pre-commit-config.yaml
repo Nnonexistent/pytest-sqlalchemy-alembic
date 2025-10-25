@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff
+        name: "Ruff lint"
+        args: [--fix]
+
+      - id: ruff
+        name: "Ruff sort imports"
+        args: [--select, I, --fix]
+
+      - id: ruff-format
+        name: "Ruff format"
+
+  # Not using https://github.com/pre-commit/mirrors-mypy as it requires stating dependencies manually
+  # Ref https://stackoverflow.com/a/75003826/2807941
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: poetry run mypy
+        require_serial: true  # Single process mode to avoid fork bomb
+        language: python
+        types: [python]

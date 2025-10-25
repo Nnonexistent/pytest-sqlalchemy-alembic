@@ -1,0 +1,76 @@
+[project]
+authors = [
+  {name = "Nik Sergievskii", email = "<nnonexistent@gmail.com>"},
+  {name = "Kosma", email = "<oversider.kosma@gmail.com>"},
+]
+dependencies = []
+description = "A pytest plugin for testing SQLAlchemy models with Alembic migrations."
+name = "pytest-sqlalchemy-alembic"
+readme = "README.md"
+requires-python = ">=3.10"
+version = "0.1.0"
+
+[tool.ruff]
+line-length = 160
+target-version = "py310"
+
+[tool.ruff.lint]
+extend-select = [
+  "ASYNC",
+  "B",
+  "BLE",
+  "C4",
+  "D",
+  "D404",
+  "E",
+  "EM",
+  "ERA",
+  "EXE",
+  "FA",
+  "FBT",
+  "FLY",
+  "FAST",
+  "YTT",
+  "G",
+  "INP",
+  "ICN",
+  "ISC",
+  "PGH",
+  "PIE",
+  "PL",
+  "PT",
+  "PYI",
+  "RET",
+  "RUF",
+  "S",
+  "SIM",
+  "T10",
+  "T20",
+  "TID251",
+  "TD",
+  "TRY",
+  "UP",
+  "W",
+]
+ignore = ["B011", "D1", "E731", "ISC001", "PLR0913", "PT015", "RET505", "S101", "S311", "SIM108", "SIM118", "TD002", "FBT001", "PLC0415", "UP032"]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+sqlalchemy = "sa"
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+check_untyped_defs = true
+ignore_missing_imports = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+strict_equality = true
+strict_mode = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
