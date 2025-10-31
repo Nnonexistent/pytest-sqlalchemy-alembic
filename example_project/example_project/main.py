@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from sqlalchemy.orm import Session
 
 from .config import SessionLocal
@@ -12,6 +14,11 @@ def get_db():
         db.close()
 
 
+@contextmanager
+def db_ctx():
+    yield from get_db()
+
+
 def create_user(db: Session, username: str, email: str) -> User:
     user = User(username=username, email=email)
     db.add(user)
@@ -23,5 +30,5 @@ def create_user(db: Session, username: str, email: str) -> User:
 if __name__ == "__main__":
     # Example: create a user
     db = SessionLocal()
-    user = create_user(db, "john_doe", "john@example.com")
+    user = create_user(db, "john_do", "john@example.com")
     db.close()
