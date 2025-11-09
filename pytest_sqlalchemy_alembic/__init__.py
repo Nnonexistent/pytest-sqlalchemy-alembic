@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Generator
 
 import pytest
-from alembic.command import upgrade as alembic_upgrade
-from alembic.config import CommandLine as AlembicCli
-from alembic.config import Config as AlembicConfig
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine.url import make_url
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from .database_manager import DatabaseManager, get_database_manager
+from .utils import alembic_upgrade, clone_engine, get_alembic_target_metadata, import_string
 
 _logger = logging.getLogger("test")
 
@@ -31,53 +32,112 @@ def pytest_addoption(parser) -> None:
     )
 
 
-@pytest.fixture(autouse=True, scope="session")
-def db_setup(request: pytest.FixtureRequest, worker_id: str):
-    # TODO: Make sure all ORM models are imported
+@pytest.fixture(scope="session")
+def sqlalchemy_sessionmaker_path() -> str:
+    return ""
 
+
+@pytest.fixture(scope="session")
+def sqlalchemy_sessionmaker(sqlalchemy_sessionmaker_path: str) -> sessionmaker:
+    if not sqlalchemy_sessionmaker_path:
+        msg = (
+            "You must override the `sqlalchemy_sessionmaker_path` fixture to provide the import path of a sqlalchemy.orm.sessionmaker instance. "
+            "Or override `sqlalchemy_sessionmaker` fixture to provide sessionmaker instance itself."
+        )
+        raise pytest.UsageError(msg)
+
+    session_maker_instance = import_string(sqlalchemy_sessionmaker_path)
+
+    if not isinstance(session_maker_instance, sessionmaker):
+        msg = f"{sqlalchemy_sessionmaker_path} is not a sqlalchemy.orm.sessionmaker instance"
+        raise pytest.UsageError(msg)
+
+    return session_maker_instance
+
+
+@pytest.fixture(scope="session")
+def sqlalchemy_engine_kwargs() -> dict:
+    return {}
+
+
+@pytest.fixture(scope="session")
+def sqlalchemy_database_manager() -> type[DatabaseManager] | None:
+    return None
+
+
+@pytest.fixture(scope="session")
+def sqlalchemy_engine(sqlalchemy_sessionmaker: sessionmaker) -> Engine:
+    engine = sqlalchemy_sessionmaker.kw["bind"]
+
+    if not isinstance(engine, Engine):
+        msg = "The bind of the sessionmaker is not a sqlalchemy Engine instance. You can customize engine discovery in sqlalchemy_engine fixture."
+        raise pytest.UsageError(msg)
+
+    return engine
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _db_setup(
+    request: pytest.FixtureRequest,
+    worker_id: str,
+    sqlalchemy_sessionmaker: sessionmaker,
+    sqlalchemy_engine: Engine,
+    sqlalchemy_engine_kwargs: dict,
+    sqlalchemy_database_manager: type[DatabaseManager] | None,
+):
     create_db = request.config.getvalue("create_db")
     nomigrations = request.config.getvalue("nomigrations")
 
-    original_db_url = make_url(TODO_DATABASE_DSN)
-    test_db_url = original_db_url.set(database=f"{original_db_url.database}_test_{worker_id}")
-    test_engine = create_engine(test_db_url, **TODO_OVERRIDABLE_KWARGS)
-
-    autocommit_connection = ORIGINAL_ENGINE.connect().execution_options(isolation_level="AUTOCOMMIT")
-    if create_db:
-        _logger.info("Recreating database: %s", test_db_url.database)
-        autocommit_connection.execute(text(f"DROP DATABASE IF EXISTS {test_db_url.database} WITH (FORCE);"))
-        autocommit_connection.execute(text(f"CREATE DATABASE {test_db_url.database} OWNER {test_db_url.username};"))
+    if sqlalchemy_engine.url.database and "." in sqlalchemy_engine.url.database:  # sqlite case to keep file suffix
+        name, suffix = sqlalchemy_engine.url.database.rsplit(".", 1)
+        new_database_name = f"{name}_test_{worker_id}.{suffix}"
     else:
-        res = autocommit_connection.execute(
-            text("SELECT 1 FROM pg_catalog.pg_database WHERE datname = :dbname"),
-            parameters={"dbname": test_db_url.database},
-        )
-        if res.scalar_one_or_none() is None:
-            _logger.info("Creating database: %s", test_db_url.database)
-            autocommit_connection.execute(text(f"CREATE DATABASE {test_db_url.database} OWNER {test_db_url.username};"))
-        else:
+        new_database_name = f"{sqlalchemy_engine.url.database or 'database'}_test_{worker_id}"
+    test_db_url = sqlalchemy_engine.url.set(database=new_database_name)
+    test_engine = clone_engine(sqlalchemy_engine, str(test_db_url), **sqlalchemy_engine_kwargs)
+
+    if sqlalchemy_database_manager is None:
+        try:
+            database_manager_class = get_database_manager(type(sqlalchemy_engine.dialect))
+        except ValueError as e:
+            msg = f"{e}. Use `sqlalchemy_database_manager` fixture to provide a custom DatabaseManager class."
+            raise pytest.UsageError(msg) from e
+    else:
+        database_manager_class = sqlalchemy_database_manager
+    database_manager = database_manager_class(sqlalchemy_engine, test_db_url)
+
+    with database_manager:
+        if create_db:
+            _logger.info("Recreating database: %s", test_db_url.database)
+            database_manager.drop()
+            database_manager.create()
+        elif database_manager.exists():
             _logger.info("Reusing database: %s", test_db_url.database)
+        else:
+            _logger.info("Creating database: %s", test_db_url.database)
+            database_manager.create()
 
-    autocommit_connection.close()
-
-    Base = ...  # TODO: configurable import of base class for sqlalchemy ORM models
+    target_metadata = get_alembic_target_metadata()
     if nomigrations:
         _logger.info("Creating tables for %s", test_db_url.database)
-        Base.metadata.create_all(bind=test_engine)
+        for metadata in target_metadata:
+            metadata.create_all(bind=test_engine)
     else:
         _logger.info("Migrating database %s", test_db_url.database)
-        options = AlembicCli().parser.parse_args(["upgrade", "head"])
-        alembic_config = AlembicConfig(
-            file_=options.config,
-            ini_section=options.name,
-            cmd_opts=options,
-        )
-        alembic_config.set_main_option("sqlalchemy.url", test_db_url.render_as_string(hide_password=False))
-        alembic_upgrade(alembic_config, "head")
+        alembic_upgrade(test_db_url.render_as_string(hide_password=False))
 
-    session_maker_instance = ...  # TODO: configurable import of sessionmaker instance
-    session_maker_instance.configure(bind=test_engine)
+    sqlalchemy_sessionmaker.configure(bind=test_engine)
 
     yield test_engine
 
-    session_maker_instance.configure(bind=ORIGINAL_ENGINE)
+    sqlalchemy_sessionmaker.configure(bind=sqlalchemy_engine)
+    test_engine.dispose()
+
+
+@pytest.fixture
+def db(sqlalchemy_sessionmaker: sessionmaker) -> Generator[Session, None, None]:
+    db_session = sqlalchemy_sessionmaker()
+    try:
+        yield db_session
+    finally:
+        db_session.close()

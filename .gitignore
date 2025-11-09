@@ -6,4 +6,4 @@ coverage.xml
 .pytest_cache
 .python-version
 uv.lock
-example_project/test.db
+example_project/*.db

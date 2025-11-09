@@ -6,6 +6,7 @@ authors = [
 dependencies = [
     "alembic>=1.17.0",
     "pytest>=8.4.2",
+    "pytest-xdist>=3.8.0",
     "sqlalchemy>=2.0.44",
 ]
 description = "Pytest plugin to manage databases, sessions and migrations for sqlalchemy-based projects"
@@ -16,8 +17,10 @@ version = "0.1.0"
 
 [dependency-groups]
 dev = [
+  "ipython>=8.37.0",
   "mypy>=1.18.2",
   "pre-commit>=4.3.0",
+  "psycopg2-binary>=2.9.11",
   "ruff>=0.14.2",
   "sqlalchemy[mypy]>=2.0.44",
 ]
@@ -83,7 +86,6 @@ check_untyped_defs = true
 ignore_missing_imports = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
 strict_equality = true
-strict_mode = true
 warn_no_return = true
 warn_redundant_casts = true
 warn_unreachable = true
