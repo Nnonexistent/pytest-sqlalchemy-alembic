@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import abc
 import os
+from contextlib import suppress
 
 import sqlalchemy as sa
 from sqlalchemy import Engine
+from sqlalchemy.dialects.mysql.mysqldb import MySQLDialect_mysqldb
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.dialects.sqlite.pysqlite import SQLiteDialect_pysqlite
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.engine.url import URL
+from sqlalchemy.exc import OperationalError
 from typing_extensions import Self
 
 
@@ -72,7 +75,10 @@ class PostgresqlDatabaseManager(DatabaseManager):
         self.connection.execute(sa.text(f"DROP DATABASE IF EXISTS {self.url.database} WITH (FORCE);"))
 
     def create(self) -> None:
-        self.connection.execute(sa.text(f"CREATE DATABASE {self.url.database} OWNER {self.url.username};"))
+        # if connection to postgres is made with passwordless access using the 'trust' authentication method
+        # `url.username` may be empty
+        owner = self.url.username or os.environ.get("USER")
+        self.connection.execute(sa.text(f"CREATE DATABASE {self.url.database} OWNER {owner};"))
 
     def exists(self) -> bool:
         return (
@@ -84,9 +90,47 @@ class PostgresqlDatabaseManager(DatabaseManager):
         )
 
 
+class MySQLDatabaseManager(DatabaseManager):
+    def __enter__(self) -> Self:
+        self.connection = self.engine.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.connection.close()
+
+    def drop(self) -> None:
+        # No Jedi MySQL is. Into the `WITH (FORCE)` clause this database can not. Help it, we must.
+        con_ids = self.connection.execute(
+            sa.text("""
+            SELECT id FROM information_schema.processlist
+            WHERE db = :db_name AND id != CONNECTION_ID()
+        """),
+            {"db_name": self.url.database},
+        )
+
+        for cid in [row[0] for row in con_ids.fetchall()]:
+            with suppress(OperationalError):  # connection may already be gone
+                self.connection.execute(sa.text(f"KILL CONNECTION {cid}"))
+
+        self.connection.execute(sa.text(f"DROP DATABASE IF EXISTS `{self.url.database}`"))
+
+    def create(self) -> None:
+        self.connection.execute(sa.text(f"CREATE DATABASE {self.url.database};"))
+
+    def exists(self) -> bool:
+        return (
+            self.connection.scalar(
+                sa.text("SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = :dbname"),
+                parameters={"dbname": self.url.database},
+            )
+            is not None
+        )
+
+
 MANAGERS = {
     SQLiteDialect_pysqlite: SQLiteDatabaseManager,
     PGDialect_psycopg2: PostgresqlDatabaseManager,
+    MySQLDialect_mysqldb: MySQLDatabaseManager
 }
 
 

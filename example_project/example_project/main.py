@@ -30,5 +30,5 @@ def create_user(db: Session, username: str, email: str) -> User:
 if __name__ == "__main__":
     # Example: create a user
     db = SessionLocal()
-    user = create_user(db, "john_do", "john@example.com")
+    user = create_user(db, "john_doe", "john@example.com")
     db.close()
