@@ -8,7 +8,7 @@ def test_create_user(db: Session):
     from example_project.orm import User
 
     name = str(uuid4())
-    email = f"{uuid4}@example.com"
+    email = f"{uuid4()}@example.com"
 
     with db_ctx() as app_db:
         create_user(app_db, name, email)
