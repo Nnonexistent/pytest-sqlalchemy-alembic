@@ -6,10 +6,10 @@ from sqlalchemy import Engine, create_engine
 
 from .base import DialectBackend
 
-_logger = logging.getLogger('pytest-sqlalchemy-alembic.dialects.postgresql_psycopg2')
+_logger = logging.getLogger('pytest-sqlalchemy-alembic')
 
 
-class PostgresqlPsycopg2Backend(DialectBackend):
+class PostgresqlPsycopgBackend(DialectBackend):
     @classmethod
     def create_test_engine(cls, engine: Engine, worker_id: str, engine_kwargs: dict[str, Any]) -> Engine:
         url = engine.url

@@ -1,9 +1,10 @@
 from .base import DialectBackend
-from .postgresql_psycopg2 import PostgresqlPsycopg2Backend
+from .postgresql_psycopg import PostgresqlPsycopgBackend
 
 __all__ = ['DIALECT_BACKENDS', 'DialectBackend']
 
 
 DIALECT_BACKENDS = {
-    'postgresql+psycopg2': PostgresqlPsycopg2Backend,
+    'postgresql+psycopg': PostgresqlPsycopgBackend,
+    'postgresql+psycopg2': PostgresqlPsycopgBackend,
 }

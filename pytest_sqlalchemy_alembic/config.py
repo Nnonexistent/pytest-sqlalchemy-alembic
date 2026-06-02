@@ -34,13 +34,13 @@ class PluginConfig:
     @classmethod
     def build(
         cls,
-        config: pytest.Config,
+        config: pytest.Config | None = None,
         session_maker: sessionmaker[Session] | None = None,
+        declarative_base: type[DeclarativeBase] | None = None,
         engine: Engine | None = None,
         engine_url: str | None = None,
         engine_kwargs: dict[str, Any] | None = None,
         orm_loader: Callable[[], None] | None = None,
-        declarative_base: type[DeclarativeBase] | None = None,
     ) -> Self:
         session_maker = cls._parse_session_maker(config, session_maker)
         engine_kwargs = cls._parse_engine_kwargs(config, engine_kwargs)
@@ -77,27 +77,34 @@ class PluginConfig:
             raise ConfigValidationError(msg) from e
 
     @classmethod
-    def _parse_session_maker(cls, config: pytest.Config, session_maker: sessionmaker[Session] | None) -> sessionmaker[Session]:
+    def _parse_session_maker(cls, config: pytest.Config | None, session_maker: sessionmaker[Session] | None) -> sessionmaker[Session]:
         if session_maker is None:
-            sessionmaker_path = config.getini('sqlalchemy_sessionmaker')
-            if not sessionmaker_path:
-                msg = 'Missing required config: sqlalchemy_sessionmaker'
+            if config is None:
+                msg = 'Missing config or session_maker override'
                 raise ConfigValidationError(msg)
-            session_maker = cls.import_from_string(sessionmaker_path)
+
+            session_maker_path = config.getini('sqlalchemy_session_maker')
+            if not session_maker_path:
+                msg = 'Missing required config: sqlalchemy_session_maker'
+                raise ConfigValidationError(msg)
+            session_maker = cls.import_from_string(session_maker_path)
 
         if not isinstance(session_maker, sessionmaker):
-            msg = f'`sqlalchemy_sessionmaker` must be a sessionmaker, got {type(session_maker).__name__!r}'
+            msg = f'`sqlalchemy_session_maker` must be a sessionmaker, got {type(session_maker).__name__!r}'
             raise ConfigValidationError(msg)
         return session_maker
 
     @classmethod
-    def _parse_engine_kwargs(cls, config: pytest.Config, engine_kwargs: dict[str, Any] | None) -> dict[str, Any]:
+    def _parse_engine_kwargs(cls, config: pytest.Config | None, engine_kwargs: dict[str, Any] | None) -> dict[str, Any]:
         if engine_kwargs is None:
+            if config is None:
+                return {}
+
             engine_kwargs_path = config.getini('sqlalchemy_engine_kwargs')
             if engine_kwargs_path:
                 engine_kwargs = cls.import_from_string(engine_kwargs_path)
             else:
-                engine_kwargs = {}
+                return {}
 
         if not isinstance(engine_kwargs, dict):
             msg = f'`sqlalchemy_engine_kwargs` must be a dict, got {type(engine_kwargs).__name__!r}'
@@ -107,22 +114,20 @@ class PluginConfig:
     @classmethod
     def _parse_engine(
         cls,
-        config: pytest.Config,
+        config: pytest.Config | None,
         engine: Engine | None,
         engine_url: str | None,
         engine_kwargs: dict[str, Any],
         session_maker: sessionmaker[Session],
     ) -> Engine:
         if engine is None:
-            engine_path = config.getini('sqlalchemy_engine')
-
-            if engine_path:
+            if config is not None and (engine_path := config.getini('sqlalchemy_engine')):
                 engine = cls.import_from_string(engine_path)
 
             elif engine_url is not None:
                 engine = create_engine(engine_url, **engine_kwargs)
 
-            elif engine_url_str := config.getini('sqlalchemy_engine'):
+            elif config is not None and (engine_url_str := config.getini('sqlalchemy_engine_url')):
                 engine = create_engine(engine_url_str, **engine_kwargs)
 
             elif isinstance(session_maker.kw['bind'], Engine):
@@ -138,8 +143,12 @@ class PluginConfig:
         return engine
 
     @classmethod
-    def _parse_declarative_base(cls, config: pytest.Config, declarative_base: type[DeclarativeBase] | None) -> type[DeclarativeBase]:
+    def _parse_declarative_base(cls, config: pytest.Config | None, declarative_base: type[DeclarativeBase] | None) -> type[DeclarativeBase]:
         if declarative_base is None:
+            if config is None:
+                msg = 'Missing config or declarative_base override'
+                raise ConfigValidationError(msg)
+
             declarative_base_path = config.getini('sqlalchemy_declarative_base')
             if not declarative_base_path:
                 msg = 'Missing required config: sqlalchemy_declarative_base'
@@ -152,11 +161,11 @@ class PluginConfig:
         return declarative_base
 
     @classmethod
-    def _load_orm_models(cls, config: pytest.Config, orm_loader: Callable | None) -> None:
+    def _load_orm_models(cls, config: pytest.Config | None, orm_loader: Callable | None) -> None:
         if orm_loader is not None:
             orm_loader()
 
-        elif orm_loader_path := config.getini('sqlalchemy_orm_loader'):
+        elif config is not None and (orm_loader_path := config.getini('sqlalchemy_orm_loader')):
             orm_loader = cls.import_from_string(orm_loader_path)
             if callable(orm_loader):
                 orm_loader()

@@ -8,8 +8,8 @@ classifiers = [
 ]
 dependencies = [
   "alembic>=1.17.0",
-  "pytest>=8.4.2",
-  "sqlalchemy>=2.0.44",
+  "pytest>=8.4.0",
+  "sqlalchemy>=2.0.0",
 ]
 description = "Pytest plugin to manage databases, sessions and migrations for sqlalchemy-based projects"
 name = "pytest-sqlalchemy-alembic"
@@ -21,12 +21,12 @@ version = "0.1.0"
 dev = [
   "mypy>=1.18.2",
   "pre-commit>=4.3.0",
-  "ruff>=0.14.2",
-  "sqlalchemy[mypy]>=2.0.44",
+  "ruff>=0.15.15",
+  "sqlalchemy[mypy]>=2.0.0",
 ]
 
 [project.entry-points.pytest11]
-sqlalchemy-alembic = "pytest_sqlalchemy_alembic"
+sqlalchemy-alembic = "pytest_sqlalchemy_alembic.plugin"
 
 [tool.ruff]
 line-length = 160
