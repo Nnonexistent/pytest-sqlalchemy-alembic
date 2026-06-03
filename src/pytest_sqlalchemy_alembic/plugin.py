@@ -4,13 +4,10 @@ import logging
 from collections.abc import Generator
 
 import pytest
-from alembic.command import upgrade as alembic_upgrade
-from alembic.config import CommandLine as AlembicCli
-from alembic.config import Config as AlembicConfig
 from sqlalchemy import Engine
 
 from .config import PluginConfig
-from .utils import resolve_worker_id
+from .utils import resolve_worker_id, run_alembic_upgrade
 
 _logger = logging.getLogger('pytest-sqlalchemy-alembic')
 
@@ -42,39 +39,32 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 @pytest.fixture(scope='session')
-def sqlalchemy_alembic_plugin_config(config: pytest.Config) -> PluginConfig:
-    return PluginConfig.build(config)
+def sqlalchemy_alembic_plugin_config(pytestconfig: pytest.Config) -> PluginConfig:
+    return PluginConfig.build(pytestconfig)
 
 
 @pytest.fixture(autouse=True, scope='session')
 def sqlalchemy_alembic_setup(
-    request: pytest.FixtureRequest,
+    pytestconfig: pytest.Config,
     sqlalchemy_alembic_plugin_config: PluginConfig,
 ) -> Generator[Engine, None, None]:
     cfg = sqlalchemy_alembic_plugin_config
     backend = cfg.dialect_backend
-    worker_id = resolve_worker_id(request.config)
+    worker_id = resolve_worker_id(pytestconfig)
 
     test_engine = backend.create_test_engine(cfg.engine, worker_id, cfg.engine_kwargs)
 
-    if request.config.getvalue('create_db'):
+    if pytestconfig.getoption('create_db'):
         backend.recreate_test_database(cfg.engine, test_engine)
     else:
         backend.reuse_or_create_test_database(cfg.engine, test_engine)
 
-    if request.config.getvalue('nomigrations'):
+    if pytestconfig.getoption('nomigrations'):
         _logger.info('Creating tables for %s', test_engine.url.database)
         cfg.metadata.create_all(bind=test_engine)
     else:
         _logger.info('Migrating database %s', test_engine.url.database)
-        options = AlembicCli().parser.parse_args(['upgrade', 'head'])
-        alembic_config = AlembicConfig(
-            file_=options.config,
-            ini_section=options.name,
-            cmd_opts=options,
-        )
-        alembic_config.set_main_option('sqlalchemy.url', test_engine.url.render_as_string(hide_password=False))
-        alembic_upgrade(alembic_config, 'head')
+        run_alembic_upgrade(test_engine)
 
     cfg.session_maker.configure(bind=test_engine)
 

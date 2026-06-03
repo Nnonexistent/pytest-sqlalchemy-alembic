@@ -16,8 +16,8 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 ## Requirements
 
 * `sqlalchemy` >= 2.0
-* `alembic` >= 1.17.0
-* `pytest` >= 8.4.2
+* `alembic` >= 1.17
+* `pytest` >= 8.4
 
 
 ## Supported dialects
@@ -34,7 +34,7 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 | `postgresql+asyncpg` | ❌
 | `mysql+pymysql` | ❌
 | `mariadb+pymysql` | ❌
-| `sqlite+pysqlite` | ❌
+| `sqlite` | ✅ Supported
 
 > [!NOTE]
 > If you need an implementation for your particular SQLAlchemy driver, please consider contributing to this project.
@@ -127,8 +127,8 @@ from pytest_sqlalchemy_alembic.config import PluginConfig
 from example_project.models import Base
 
 @pytest.fixture(scope='session')
-def sqlalchemy_alembic_plugin_config(config: pytest.Config) -> PluginConfig:
-    return PluginConfig.build(config=config, declarative_base=Base)
+def sqlalchemy_alembic_plugin_config(pytestconfig: pytest.Config) -> PluginConfig:
+    return PluginConfig.build(config=pytestconfig, declarative_base=Base)
 ```
 
 

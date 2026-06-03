@@ -1,13 +1,14 @@
 [project]
 authors = [
-  {name = "Nik Sergievskii", email = "<nnonexistent@gmail.com>"},
-  {name = "Kosma", email = "<oversider.kosma@gmail.com>"},
+  {name = "Nik Sergievskii", email = "nnonexistent@gmail.com"},
+  {name = "Kosma", email = "oversider.kosma@gmail.com"},
 ]
 classifiers = [
   "Framework :: Pytest",
 ]
 dependencies = [
   "alembic>=1.17.0",
+  "mypy>=2.1.0",
   "pytest>=8.4.0",
   "sqlalchemy>=2.0.0",
 ]
@@ -19,14 +20,22 @@ version = "0.1.0"
 
 [dependency-groups]
 dev = [
-  "mypy>=1.18.2",
-  "pre-commit>=4.3.0",
+  "mypy>=2.1.0",
+  "pre-commit>=4.6.0",
   "ruff>=0.15.15",
   "sqlalchemy[mypy]>=2.0.0",
 ]
 
 [project.entry-points.pytest11]
 sqlalchemy-alembic = "pytest_sqlalchemy_alembic.plugin"
+
+[build-system]
+build-backend = "uv_build"
+requires = ["uv_build>=0.11.18,<0.12"]
+
+[tool.pytest.ini_options]
+addopts = "--disable-plugin-autoload"
+filterwarnings = ["error"]
 
 [tool.ruff]
 line-length = 160
