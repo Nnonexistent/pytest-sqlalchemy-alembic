@@ -1,7 +1,6 @@
-from pytest_sqlalchemy_alembic.dialects.sqlite import SqliteBackend
-
 from .base import DialectBackend
 from .postgresql_psycopg import PostgresqlPsycopgBackend
+from .sqlite import SqliteBackend
 
 __all__ = ['DIALECT_BACKENDS', 'DialectBackend']
 

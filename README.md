@@ -10,7 +10,7 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 1. The plugin creates an SQLAlchemy test engine for each worker process.
 2. Test database is created or reused for each test engine. If `--createdb` is given, the test database is dropped beforehand.
 3. Database schema is populated via **Alembic** or directly from SQLAlchemy metadata (if `--nomigrations` is given).
-4. The sessionmaker instance is rebound to the test engine for the duration of the test session.
+4. If configured, the **sessionmaker** instance is rebound to the test engine for the duration of the test session.
 
 
 ## Requirements
@@ -18,6 +18,7 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 * `sqlalchemy` >= 2.0
 * `alembic` >= 1.17
 * `pytest` >= 8.4
+* `pytest-xdist` >= 3.0 (Optional)
 
 
 ## Supported dialects
@@ -49,7 +50,7 @@ pip install pytest-sqlalchemy-alembic
 
 ## Minimal configuration
 
-Configuration could be done in `pyproject.toml`, `pytest.ini` or via pytest fixture. At least `session_maker` and `declarative_base` should be specified. All other options, like `engine_url` can be inferred from those.
+Configuration could be done in `pyproject.toml`, `pytest.ini` or via pytest fixture. At least `session_maker`, `engine` or `engine_url` should be specified.
 
 
 ### `pyproject.toml`
@@ -57,7 +58,6 @@ Configuration could be done in `pyproject.toml`, `pytest.ini` or via pytest fixt
 ```toml
 [tool.pytest.ini_options]
 sqlalchemy_session_maker = "example_project.db:SessionLocal"
-sqlalchemy_declarative_base = "example_project.models:Base"
 ```
 
 ### `pytest.ini`
@@ -65,7 +65,6 @@ sqlalchemy_declarative_base = "example_project.models:Base"
 ```ini
 [pytest]
 sqlalchemy_session_maker = example_project.db:SessionLocal
-sqlalchemy_declarative_base = example_project.models:Base
 ```
 
 ### `conftest.py`
@@ -74,11 +73,10 @@ sqlalchemy_declarative_base = example_project.models:Base
 import pytest
 from pytest_sqlalchemy_alembic.config import PluginConfig
 from example_project.db import SessionLocal
-from example_project.models import Base
 
 @pytest.fixture(scope='session')
 def sqlalchemy_alembic_plugin_config() -> PluginConfig:
-    return PluginConfig.build(session_maker=SessionLocal, declarative_base=Base)
+    return PluginConfig.build(session_maker=SessionLocal)
 ```
 
 
@@ -86,33 +84,33 @@ def sqlalchemy_alembic_plugin_config() -> PluginConfig:
 
 ### Config file options
 
-| Option | Description | Default value | Example |
-| ------ | ----------- | ------------- | ------- |
-| `sqlalchemy_session_maker`     | Import path to a sessionmaker instance | *Required field* | `example_project.db:SessionLocal`
-| `sqlalchemy_declarative_base` | Import path to declarative base class for SQLAlchemy ORM models | *Required field* | `example_project.models:Base`
-| `sqlalchemy_engine`           | Import path to engine | Will be created from `engine_url` and `engine_kwargs` if they are not empty. <br>Otherwise will be extracted from the sessionmaker instance | `example_project.db:engine`
-| `sqlalchemy_engine_url`       | Engine URL | Extracted from `engine` if provided | `postgresql+psycopg://localhost:5432/example`
-| `sqlalchemy_engine_kwargs`    | Import path to engine kwargs | - | `example_project.db:engine_kwargs`
-| `sqlalchemy_orm_loader`       | Import path to module or callable that loads all ORM necessary models | - | `example_project.entrypoint`
+| Option | Description
+| ------ | -----------
+| `sqlalchemy_session_maker` | Import path to a sessionmaker instance
+| `sqlalchemy_metadata`      | Import path to SQLAlchemy metadata. Usually `metadata` attribute of a declarative base class. <br>Used for non-alembic database schema population based on metadata. Metadata is extracted from the alembic config if this option is empty
+| `sqlalchemy_engine`        | Import path to SQLAlchemy engine instance. <br>If empty, created using `engine_url` and `engine_kwargs` or extracted from the sessionmaker instance
+| `sqlalchemy_engine_url`    | SQLAlchemy engine URL. Extracted from `engine` if empty
+| `sqlalchemy_engine_kwargs` | Import path to a dict containing engine kwargs
+| `sqlalchemy_orm_loader`    | Import path to module or callable that loads all ORM necessary models
 
 
 ### Fixture override options
 
 Arguments of `PluginConfig.build` class method to use in the `sqlalchemy_alembic_plugin_config` fixture.
 
-| Argument | Type | Description |
-| -------- | ---- | ----------- |
-| `session_maker`     | `sa.orm.sessionmaker[Session]` | Instance of a sessionmaker
-| `declarative_base` | `type[sa.orm.DeclarativeBase]` | Base class of used ORM models
-| `engine`           | `sa.Engine` | Sqlalchemy engine instance
-| `engine_url`       | `str` | Engine URL
-| `engine_kwargs`    | `dict[str, Any]` | `dict` with kwargs for `sa.create_engine` function. E.g. `{'json_serializer': my_json_serializer}`
-| `orm_loader`       | `Callable[[], Any]` | Callable, that will load all ORM necessary models
+| Argument | Type | Description
+| -------- | ---- | -----------
+| `session_maker` | `sa.orm.sessionmaker[Session]` | Instance of a sessionmaker
+| `metadata`      | `sa.MetaData | Sequence[sa.MetaData]` | SQLAlchemy metadata
+| `engine`        | `sa.Engine` | Sqlalchemy engine instance
+| `engine_url`    | `str` | SQLAlchemy engine URL
+| `engine_kwargs` | `dict[str, Any]` | `dict` with kwargs for `sa.create_engine` function. E.g. `{'json_serializer': my_json_serializer}`
+| `orm_loader`    | `Callable[[], Any]` | Callable, that will load all ORM necessary models
 
 
 ## Combining file configuration and fixture override
 
-In this example `session_maker` will be defined in `pyproject.toml` and `declarative_base` will be directly imported in the `conftest.py`.
+In this example `session_maker` will be defined in `pyproject.toml` and `metadata` will be directly imported in the `conftest.py`.
 
 ```toml
 # pyproject.toml
@@ -128,13 +126,13 @@ from example_project.models import Base
 
 @pytest.fixture(scope='session')
 def sqlalchemy_alembic_plugin_config(pytestconfig: pytest.Config) -> PluginConfig:
-    return PluginConfig.build(config=pytestconfig, declarative_base=Base)
+    return PluginConfig.build(config=pytestconfig, metadata=Base.metadata)
 ```
 
 
 ## Usage
 
-The plugin binds your sessionmaker to the test database automatically.
+When configured, the plugin binds your sessionmaker to the test database automatically.
 
 ```python
 # services.py
@@ -153,7 +151,7 @@ def test_my_service():
 
 > [!NOTE]
 > Usually you don't need to change any of your code to use test database instead of main one.<br>
-> However, if you make database queries outside of your sessionmaker, you need to update those places manually.
+> However, if you make database queries outside of your sessionmaker, you need to patch those places manually.
 
 
 ## Pytest run flags
@@ -168,5 +166,5 @@ def test_my_service():
 
 | Fixture | Scope | Output | Description |
 | ------- | ----- | ------ | ----------- |
-| `sqlalchemy_alembic_setup` | session | Test SQLAlchemy engine | Autouse fixture that creates and migrates the test database and rebinds the sessionmaker
+| `sqlalchemy_alembic_setup` | session | Test SQLAlchemy engine | Autouse fixture that creates and migrates the test database and rebinds the configured sessionmaker
 | `sqlalchemy_alembic_plugin_config` | session | This plugin's config | Extension point to override config values from python context
