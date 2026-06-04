@@ -82,7 +82,7 @@ extend-select = [
   "UP",
   "W",
 ]
-ignore = ["B011", "D1", "E731", "ISC001", "PLR0913", "PT015", "RET505", "S101", "S311", "SIM108", "SIM118", "TD002", "FBT001", "PLC0415", "UP032"]
+ignore = ["B011", "B027", "D1", "E731", "ISC001", "PLR0913", "PT015", "RET505", "S101", "S311", "SIM108", "SIM118", "TD002", "FBT001", "PLC0415", "UP032"]
 
 [tool.ruff.lint.isort]
 split-on-trailing-comma = false

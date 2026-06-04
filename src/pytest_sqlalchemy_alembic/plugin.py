@@ -49,15 +49,21 @@ def sqlalchemy_alembic_setup(
     sqlalchemy_alembic_plugin_config: PluginConfig,
 ) -> Generator[Engine, None, None]:
     cfg = sqlalchemy_alembic_plugin_config
-    backend = cfg.dialect_backend
+    database_manager = cfg.database_manager(cfg.engine)
     worker_id = resolve_worker_id(pytestconfig)
 
-    test_engine = backend.create_test_engine(cfg.engine, worker_id, cfg.engine_kwargs)
+    test_engine = database_manager.create_test_engine(worker_id, cfg.engine_kwargs)
 
-    if pytestconfig.getoption('create_db'):
-        backend.recreate_test_database(cfg.engine, test_engine)
-    else:
-        backend.reuse_or_create_test_database(cfg.engine, test_engine)
+    with database_manager:
+        if pytestconfig.getoption('create_db'):
+            _logger.info('Re-creating test database %s', test_engine.url.database)
+            database_manager.drop_test_database()
+            database_manager.create_test_database()
+        elif database_manager.test_database_exists():
+            _logger.info('Re-using existing test database %s', test_engine.url.database)
+        else:
+            _logger.info('Creating a new test database %s', test_engine.url.database)
+            database_manager.create_test_database()
 
     if pytestconfig.getoption('nomigrations'):
         _logger.info('Creating tables for %s', test_engine.url.database)

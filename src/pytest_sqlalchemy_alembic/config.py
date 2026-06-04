@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session, sessionmaker
 from typing_extensions import Self
 
-from .dialects import DIALECT_BACKENDS, DialectBackend
+from .dialects import DATABASE_MANAGERS, BaseDatabaseManager
 from .utils import get_alembic_target_metadata, import_string
 
 
@@ -15,20 +15,20 @@ class ConfigValidationError(ValueError):
 
 
 class PluginConfig:
-    __slots__ = ('dialect_backend', 'engine', 'engine_kwargs', 'metadata', 'session_maker')
+    __slots__ = ('database_manager', 'engine', 'engine_kwargs', 'metadata', 'session_maker')
 
     def __init__(
         self,
         session_maker: sessionmaker[Session] | None,
         engine_kwargs: dict[str, Any],
         engine: sa.engine.Engine,
-        dialect_backend: type[DialectBackend],
+        database_manager: type[BaseDatabaseManager],
         metadata: Sequence[sa.MetaData],
     ):
         self.session_maker = session_maker
         self.engine_kwargs = engine_kwargs
         self.engine = engine
-        self.dialect_backend = dialect_backend
+        self.database_manager = database_manager
         self.metadata = metadata
 
     @classmethod
@@ -48,16 +48,16 @@ class PluginConfig:
         metadata = cls._parse_metadata(config, metadata)
         cls._load_orm_models(config, orm_loader)
 
-        if engine.url.drivername not in DIALECT_BACKENDS:
+        if engine.url.drivername not in DATABASE_MANAGERS:
             msg = f'Unsupported database dialect: {engine.url.drivername}'
             raise ConfigValidationError(msg)
-        dialect_backend = DIALECT_BACKENDS[engine.url.drivername]
+        database_manager = DATABASE_MANAGERS[engine.url.drivername]
 
         return cls(
             session_maker=session_maker,
             engine_kwargs=engine_kwargs,
             engine=engine,
-            dialect_backend=dialect_backend,
+            database_manager=database_manager,
             metadata=metadata,
         )
 

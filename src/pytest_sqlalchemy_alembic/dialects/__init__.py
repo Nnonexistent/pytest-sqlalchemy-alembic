@@ -1,12 +1,13 @@
-from .base import DialectBackend
-from .postgresql_psycopg import PostgresqlPsycopgBackend
-from .sqlite import SqliteBackend
+from .base import BaseDatabaseManager
+from .postgresql_psycopg import PostgresqlPsycopgManager
+from .sqlite import SqliteManager
 
-__all__ = ['DIALECT_BACKENDS', 'DialectBackend']
+__all__ = ['DATABASE_MANAGERS', 'BaseDatabaseManager']
 
 
-DIALECT_BACKENDS = {
-    'postgresql+psycopg': PostgresqlPsycopgBackend,
-    'postgresql+psycopg2': PostgresqlPsycopgBackend,
-    'sqlite': SqliteBackend,
+DATABASE_MANAGERS: dict[str, type[BaseDatabaseManager]] = {
+    'postgresql': PostgresqlPsycopgManager,
+    'postgresql+psycopg': PostgresqlPsycopgManager,
+    'postgresql+psycopg2': PostgresqlPsycopgManager,
+    'sqlite': SqliteManager,
 }
