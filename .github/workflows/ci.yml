@@ -11,14 +11,32 @@ jobs:
         dependencies:
           - "--resolution highest"
           - "--resolution lowest-direct"
+
+          # Below are the most popular package versions according PyPI stats
           - "--with pytest==9.0.3"
           - "--with sqlalchemy==2.0.41"
           - "--with pytest==8.4.1"
+
+        include:
+          # Checking sqlalchemy bug fix (https://github.com/sqlalchemy/sqlalchemy/issues/11334)
+          - python_version: "3.13"
+            dependencies: "--with sqlalchemy==2.0.31"
+          - python_version: "3.14"
+            dependencies: "--with sqlalchemy==2.0.31"
+
+          # Checking sqlalchemy deprecation warning gone
+          - python_version: "3.12"
+            dependencies: "--with sqlalchemy==2.0.16"
+
         exclude:
           # Due to bug in sqlalchemy<3.0.31 (https://github.com/sqlalchemy/sqlalchemy/issues/11334)
           - python_version: "3.13"
             dependencies: "--resolution lowest-direct"
           - python_version: "3.14"
+            dependencies: "--resolution lowest-direct"
+
+          # Due to a deprecation warning in sqlalchemy<2.0.16 in python>=3.12
+          - python_version: "3.12"
             dependencies: "--resolution lowest-direct"
 
     name: Plugin tests
