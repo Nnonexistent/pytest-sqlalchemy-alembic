@@ -3,17 +3,35 @@ classifiers = [
   "Private :: Do Not Upload",
 ]
 dependencies = [
-  "pytest>=8.4.0",
-  "pytest-sqlalchemy-alembic",
-  "sqlalchemy>=2.0.0",
+  "alembic>=1.18.4",
+  "pydantic-settings>=2.14.1",
+  "sqlalchemy>=2.0.41",
 ]
 description = "Example project to test pytest-sqlalchemy-alembic plugin"
 name = "example-project"
 requires-python = ">=3.10"
 version = "0.1.0"
 
-[tool.pytest.ini_options]
-sqlalchemy_session_maker = "example_project.db:SessionLocal"
+[dependency-groups]
+dev = [
+  "mypy>=2.1.0",
+  "pytest>=9.0.3",
+  "pytest-sqlalchemy-alembic>=0.1.0",
+]
 
 [tool.uv.sources]
 pytest-sqlalchemy-alembic = {path = "../"}
+
+[tool.pytest.ini_options]
+sqlalchemy_session_maker = "example_project.db:SessionLocal"
+
+[tool.mypy]
+check_untyped_defs = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+strict_equality = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
