@@ -9,12 +9,15 @@ jobs:
       matrix:
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         dependencies:
-          - "--frozen"
           - "--resolution highest"
           - "--resolution lowest-direct"
           - "--with pytest==9.0.3"
           - "--with sqlalchemy==2.0.41"
           - "--with pytest==8.4.1"
+        exclude:
+          # Due to bug in sqlalchemy<3.0.31 (https://github.com/sqlalchemy/sqlalchemy/issues/11334)
+          - python_version: "3.13"
+            dependencies: "--resolution lowest-direct"
 
     name: Plugin tests
     runs-on: ubuntu-latest
