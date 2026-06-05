@@ -5,6 +5,8 @@ on:
 
 jobs:
   plugin-tests:
+    name: Plugin tests
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -39,8 +41,6 @@ jobs:
           - python_version: "3.12"
             dependencies: "--resolution lowest-direct"
 
-    name: Plugin tests
-    runs-on: ubuntu-latest
     env:
       UV_PYTHON: ${{ matrix.python_version }}
 
@@ -61,6 +61,35 @@ jobs:
       - name: Run tests
         run: uv run ${{ matrix.dependencies }} pytest
 
+  dialect-sqlite-tests:
+    name: Dialect tests (SQLite)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    env:
+      UV_PYTHON: ${{ matrix.python_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
+      - name: Run example project tests
+        run: |
+          cd example_project
+          uv run pytest
+
   static-analysis:
     name: Static analysis
     runs-on: ubuntu-latest
@@ -70,19 +99,11 @@ jobs:
 
       - name: Setup Python
         uses: actions/setup-python@v6
-        with:
-          python-version: 3.14
 
       - name: Install uv
         uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: true
-
-      - name: Load mypy cache
-        uses: actions/cache@v5
-        with:
-          path: .mypy_cache
-          key: mypy-${{ runner.os }}-3.14
 
       - name: Ruff check
         run: uv run ruff check .
@@ -92,6 +113,12 @@ jobs:
 
       - name: Ruff check formatting
         run: uv run ruff format --check .
+
+      - name: Load mypy cache
+        uses: actions/cache@v5
+        with:
+          path: .mypy_cache
+          key: mypy-${{ runner.os }}
 
       - name: Mypy
         run: uv run mypy .
