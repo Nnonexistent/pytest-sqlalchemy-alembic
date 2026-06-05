@@ -18,6 +18,8 @@ jobs:
           # Due to bug in sqlalchemy<3.0.31 (https://github.com/sqlalchemy/sqlalchemy/issues/11334)
           - python_version: "3.13"
             dependencies: "--resolution lowest-direct"
+          - python_version: "3.14"
+            dependencies: "--resolution lowest-direct"
 
     name: Plugin tests
     runs-on: ubuntu-latest
