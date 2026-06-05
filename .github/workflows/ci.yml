@@ -152,7 +152,6 @@ jobs:
 
     env:
       UV_PYTHON: ${{ matrix.python_version }}
-      UV_EXTRA: postgres
       DATABASE_URL: postgresql://ci:password@postgres:5432/example
 
     steps:
@@ -172,4 +171,4 @@ jobs:
       - name: Run example project tests
         run: |
           cd example_project
-          uv run pytest
+          uv run --extra postgres pytest
