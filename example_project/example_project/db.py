@@ -3,10 +3,9 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DATABASE_URL = 'sqlite:///./database.db'
+from .config import settings
 
-
-engine = create_engine(DATABASE_URL)
+engine = create_engine(str(settings.DATABASE_URL))
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

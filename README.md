@@ -16,7 +16,7 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 ## Requirements
 
 * `sqlalchemy` >= 2.0
-* `alembic` >= 1.17
+* `alembic` >= 1.16
 * `pytest` >= 8.4
 * `pytest-xdist` >= 3.0 (Optional)
 

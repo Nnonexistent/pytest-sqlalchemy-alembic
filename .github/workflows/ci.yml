@@ -1,0 +1,176 @@
+name: "CI"
+
+on:
+  pull_request:
+
+jobs:
+  static-analysis:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Check imports sorting
+        run: uv run ruff check --select I .
+
+      - name: Ruff check formatting
+        run: uv run ruff format --check .
+
+      - name: Load mypy cache
+        uses: actions/cache@v5
+        with:
+          path: .mypy_cache
+          key: mypy-${{ runner.os }}
+
+      - name: Mypy (plugin)
+        run: uv run mypy .
+
+      - name: Mypy (Example project)
+        run: |
+          cd example_project
+          uv run mypy .
+
+  plugin-tests:
+    name: Plugin tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        dependencies:
+          - "--resolution highest"
+          - "--resolution lowest-direct"
+
+          # Below are the most popular package versions according PyPI stats
+          - "--with alembic==1.18.4"
+          - "--with pytest==8.4.1"
+          - "--with sqlalchemy==2.0.41"
+
+        include:
+          # Checking sqlalchemy bug fix (https://github.com/sqlalchemy/sqlalchemy/issues/11334)
+          - python_version: "3.13"
+            dependencies: "--with sqlalchemy==2.0.31"
+          - python_version: "3.14"
+            dependencies: "--with sqlalchemy==2.0.31"
+
+          # Checking sqlalchemy deprecation warning gone
+          - python_version: "3.12"
+            dependencies: "--with sqlalchemy==2.0.16"
+
+        exclude:
+          # Due to bug in sqlalchemy<3.0.31 (https://github.com/sqlalchemy/sqlalchemy/issues/11334)
+          - python_version: "3.13"
+            dependencies: "--resolution lowest-direct"
+          - python_version: "3.14"
+            dependencies: "--resolution lowest-direct"
+
+          # Due to a deprecation warning in sqlalchemy<2.0.16 in python>=3.12
+          - python_version: "3.12"
+            dependencies: "--resolution lowest-direct"
+
+    env:
+      UV_PYTHON: ${{ matrix.python_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
+      - name: Run tests
+        run: uv run ${{ matrix.dependencies }} pytest
+
+  dialect-sqlite-tests:
+    name: Dialect tests (SQLite)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    env:
+      UV_PYTHON: ${{ matrix.python_version }}
+      DATABASE_URL: sqlite:///./database.db
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
+      - name: Run example project tests
+        run: |
+          cd example_project
+          uv run pytest
+
+  dialect-postgresql-tests:
+    name: Dialect tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        postgres_version: ["14", "15", "16", "17", "18"]
+
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres_version }}
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: example
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      UV_PYTHON: ${{ matrix.python_version }}
+      DATABASE_URL: postgresql://ci:password@localhost:5432/example
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
+      - name: Run example project tests
+        run: |
+          cd example_project
+          uv run --extra postgres pytest
