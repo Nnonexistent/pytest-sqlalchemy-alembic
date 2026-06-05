@@ -144,6 +144,8 @@ jobs:
           POSTGRES_USER: ci
           POSTGRES_PASSWORD: password
           POSTGRES_DB: example
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -152,7 +154,7 @@ jobs:
 
     env:
       UV_PYTHON: ${{ matrix.python_version }}
-      DATABASE_URL: postgresql://ci:password@postgres:5432/example
+      DATABASE_URL: postgresql://ci:password@localhost:5432/example
 
     steps:
       - name: Checkout code
