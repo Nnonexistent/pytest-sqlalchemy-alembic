@@ -152,6 +152,7 @@ jobs:
 
     env:
       UV_PYTHON: ${{ matrix.python_version }}
+      UV_EXTRA: postgres
       DATABASE_URL: postgresql://ci:password@postgres:5432/example
 
     steps:

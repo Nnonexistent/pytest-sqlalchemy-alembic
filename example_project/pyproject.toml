@@ -12,6 +12,11 @@ name = "example-project"
 requires-python = ">=3.10"
 version = "0.1.0"
 
+[project.optional-dependencies]
+postgres = [
+  "psycopg2>=2.9.12",
+]
+
 [dependency-groups]
 dev = [
   "mypy>=2.1.0",
