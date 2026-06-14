@@ -14,15 +14,25 @@ version = "0.1.0"
 
 [project.optional-dependencies]
 postgres = [
+  "pg8000>=1.31.5",
+  "psycopg>=3.3.4",
   "psycopg2>=2.9.12",
+  "psycopg2cffi>=2.9.0",
+]
+sqlite = [
+    "sqlcipher3>=0.6.2",
 ]
 
 [dependency-groups]
 dev = [
+  "ipython>=8.39.0",
   "mypy>=2.1.0",
   "pytest>=9.0.3",
   "pytest-sqlalchemy-alembic>=0.1.0",
 ]
+
+[tool.uv]
+reinstall-package = ["pytest-sqlalchemy-alembic"]
 
 [tool.uv.sources]
 pytest-sqlalchemy-alembic = {path = "../"}

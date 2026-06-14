@@ -1,0 +1,40 @@
+name: "Sqlite dialect tests"
+
+on:
+  workflow_call:
+
+jobs:
+  dialect-sqlite-tests:
+    name: Dialect tests (SQLite)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+        include:
+          - drivername: "sqlite+pysqlite"
+            database_url: sqlite:///./database.db
+          - drivername: "sqlite+pysqlcipher"
+            database_url: sqlite+pysqlcipher://:example@/database.db
+
+    env:
+      UV_PYTHON: ${{ matrix.python_version }}
+      DATABASE_URL: ${{ matrix.database_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
+      - name: Run example project tests
+        working-directory: example_project
+        run: uv run --extra sqlite pytest
