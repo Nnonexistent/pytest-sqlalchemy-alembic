@@ -1,0 +1,43 @@
+name: "Test all dialects"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      sqlite:
+        type: boolean
+        description: "Run SQLite tests"
+        default: true
+      postgresql:
+        type: boolean
+        description: "Run PostgreSQL tests"
+        default: true
+      mariadb:
+        type: boolean
+        description: "Run MariaDB tests"
+        default: true
+      mysql:
+        type: boolean
+        description: "Run MySQL tests"
+        default: true
+
+jobs:
+  dialect-sqlite:
+    if: ${{ github.event.inputs.sqlite == 'true' }}
+    uses: ./.github/workflows/dialect-sqlite.yml
+    secrets: inherit
+
+  dialect-postgresql:
+    if: ${{ github.event.inputs.postgresql == 'true' }}
+    uses: ./.github/workflows/dialect-postgresql.yml
+    secrets: inherit
+
+  dialect-mariadb:
+    if: ${{ github.event.inputs.mariadb == 'true' }}
+    uses: ./.github/workflows/dialect-mariadb.yml
+    secrets: inherit
+
+  dialect-mysql:
+    if: ${{ github.event.inputs.mysql == 'true' }}
+    uses: ./.github/workflows/dialect-mysql.yml
+    secrets: inherit

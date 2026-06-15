@@ -16,5 +16,23 @@ services:
       timeout: 5s
       retries: 5
 
+  mariadb:
+    image: mariadb:12.3
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - 127.0.0.1:3306:3306
+    environment:
+      - MARIADB_DATABASE=example
+      - MARIADB_ROOT_PASSWORD=example
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   postgres_data:
+  mariadb_data:

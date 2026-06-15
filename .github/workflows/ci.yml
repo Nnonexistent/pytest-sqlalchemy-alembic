@@ -4,14 +4,6 @@ on:
   pull_request:
 
 jobs:
-  dialect-sqlite:
-    uses: ./.github/workflows/dialect-sqlite.yml
-    secrets: inherit
-
-  dialect-postgresql:
-    uses: ./.github/workflows/dialect-postgresql.yml
-    secrets: inherit
-
   static-analysis:
     name: Static analysis
     runs-on: ubuntu-latest
