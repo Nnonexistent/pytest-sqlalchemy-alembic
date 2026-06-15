@@ -10,6 +10,7 @@ jobs:
     strategy:
       matrix:
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        drivername: ["sqlite+pysqlite", "sqlite+pysqlcipher"]
 
         include:
           - drivername: "sqlite+pysqlite"
@@ -34,6 +35,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: true
+          cache-suffix: sqlite-${{ matrix.python_version }}
 
       - name: Run example project tests
         working-directory: example_project

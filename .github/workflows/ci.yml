@@ -26,6 +26,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: true
+          cache-suffix: static-analysis
 
       - name: Ruff check
         run: uv run ruff check .
@@ -102,6 +103,6 @@ jobs:
         uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: true
-
+          cache-suffix: plugin-${{ matrix.python_version }}
       - name: Run tests
         run: uv run ${{ matrix.dependencies }} pytest

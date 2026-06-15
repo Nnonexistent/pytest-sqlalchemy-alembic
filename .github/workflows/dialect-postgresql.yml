@@ -45,6 +45,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: true
+          cache-suffix: postgres-${{ matrix.python_version }}
 
       - name: Run example project tests
         working-directory: example_project
