@@ -30,7 +30,7 @@ jobs:
 
     env:
       UV_PYTHON: ${{ matrix.python_version }}
-      DATABASE_URL: ${{ matrix.drivername }}://root:password@localhost:3306/example
+      DATABASE_URL: ${{ matrix.drivername }}://root:password@127.0.0.1:3306/example
 
     steps:
       - name: Checkout code
