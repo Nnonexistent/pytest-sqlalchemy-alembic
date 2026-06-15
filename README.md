@@ -1,4 +1,15 @@
 # pytest-sqlalchemy-alembic
+[![CI](https://github.com/Nnonexistent/pytest-sqlalchemy-alembic/actions/workflows/ci.yml/badge.svg)](https://github.com/Nnonexistent/pytest-sqlalchemy-alembic/actions/workflows/ci.yml)
+[![Test all dialects](https://github.com/Nnonexistent/pytest-sqlalchemy-alembic/actions/workflows/test-dialects.yml/badge.svg)](https://github.com/Nnonexistent/pytest-sqlalchemy-alembic/actions/workflows/test-dialects.yml)
+<br>
+[![PyPI](https://img.shields.io/pypi/v/pytest-sqlalchemy-alembic)](https://pypi.org/project/pytest-sqlalchemy-alembic/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pytest-sqlalchemy-alembic)](https://pypi.org/project/pytest-sqlalchemy-alembic/)
+[![PyPI - Format](https://img.shields.io/pypi/format/pytest-sqlalchemy-alembic)](https://pypi.org/project/pytest-sqlalchemy-alembic/)
+<br>
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen)](https://github.com/pre-commit/pre-commit)
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 
 A pytest plugin to manage test databases for SQLAlchemy-based projects.
 
