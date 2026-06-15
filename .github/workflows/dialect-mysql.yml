@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        mysql_version: ["8.0", "8.4", "9.0"]
+        mysql_version: ["8.0", "8.4", "9.7"]
         drivername: ["mysql+mysqldb", "mysql+pymysql", "mysql+mysqlconnector", "mysql+cymysql"]
 
     services:
@@ -21,16 +21,10 @@ jobs:
           MYSQL_ROOT_PASSWORD: password
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd "healthcheck.sh --connect --innodb_initialized"
-          --health-start-period 10s
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 3
 
     env:
       UV_PYTHON: ${{ matrix.python_version }}
-      DATABASE_URL: ${{ matrix.drivername }}://root:password@localhost:3306/example
+      DATABASE_URL: ${{ matrix.drivername }}://root:password@127.0.0.1:3306/example
 
     steps:
       - name: Checkout code
@@ -45,8 +39,11 @@ jobs:
         uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: true
-          cache-suffix: mariadb-${{ matrix.python_version }}
+          cache-suffix: mysql-${{ matrix.python_version }}
+
+      - name: Install pre-requisite packages
+        run: sudo apt-get update && sudo apt-get install -y libmysqlclient-dev
 
       - name: Run example project tests
         working-directory: example_project
-        run: uv run --extra mariadb pytest
+        run: uv run --extra mysql pytest

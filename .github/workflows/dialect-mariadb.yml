@@ -30,7 +30,7 @@ jobs:
 
     env:
       UV_PYTHON: ${{ matrix.python_version }}
-      DATABASE_URL: ${{ matrix.drivername }}://root:password@localhost:3306/example
+      DATABASE_URL: ${{ matrix.drivername }}://root:password@127.0.0.1:3306/example
 
     steps:
       - name: Checkout code
@@ -46,6 +46,9 @@ jobs:
         with:
           enable-cache: true
           cache-suffix: mariadb-${{ matrix.python_version }}
+
+      - name: Install pre-requisite packages
+        run: sudo apt-get update && sudo apt-get install -y libmariadb-dev
 
       - name: Run example project tests
         working-directory: example_project

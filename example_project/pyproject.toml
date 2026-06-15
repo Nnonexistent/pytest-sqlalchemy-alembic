@@ -25,6 +25,11 @@ sqlite = [
 mariadb = [
     "cymysql>=1.1.1",
     "mariadb>=1.1.14",
+    "mysqlclient>=2.2.8",
+    "pymysql>=1.2.0",
+]
+mysql = [
+    "cymysql>=1.1.1",
     "mysql-connector-python>=9.7.0",
     "mysqlclient>=2.2.8",
     "pymysql>=1.2.0",

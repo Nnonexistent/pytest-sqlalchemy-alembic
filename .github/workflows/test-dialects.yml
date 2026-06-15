@@ -22,21 +22,21 @@ on:
 
 jobs:
   dialect-sqlite:
-    if: ${{ inputs.sqlite == 'true' }}
+    if: ${{ inputs.sqlite }}
     uses: ./.github/workflows/dialect-sqlite.yml
     secrets: inherit
 
   dialect-postgresql:
-    if: ${{ inputs.postgresql == 'true' }}
+    if: ${{ inputs.postgresql }}
     uses: ./.github/workflows/dialect-postgresql.yml
     secrets: inherit
 
   dialect-mariadb:
-    if: ${{ inputs.mariadb == 'true' }}
+    if: ${{ inputs.mariadb }}
     uses: ./.github/workflows/dialect-mariadb.yml
     secrets: inherit
 
   dialect-mysql:
-    if: ${{ inputs.mysql == 'true' }}
+    if: ${{ inputs.mysql }}
     uses: ./.github/workflows/dialect-mysql.yml
     secrets: inherit
