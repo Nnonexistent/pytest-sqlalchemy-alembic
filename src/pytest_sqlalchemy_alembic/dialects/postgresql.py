@@ -8,7 +8,7 @@ from typing_extensions import Self
 from .base import BaseDatabaseManager
 
 
-class PostgresqlPsycopgManager(BaseDatabaseManager):
+class PostgresqlManager(BaseDatabaseManager):
     def __enter__(self) -> Self:
         self.connection = self.engine.connect().execution_options(isolation_level='AUTOCOMMIT')
         return self
