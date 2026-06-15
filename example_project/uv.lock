@@ -216,6 +216,12 @@ mariadb = [
     { name = "mysqlclient" },
     { name = "pymysql" },
 ]
+mysql = [
+    { name = "cymysql" },
+    { name = "mysql-connector-python" },
+    { name = "mysqlclient" },
+    { name = "pymysql" },
+]
 postgres = [
     { name = "pg8000" },
     { name = "psycopg" },
@@ -239,19 +245,23 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.18.4" },
     { name = "cymysql", marker = "extra == 'mariadb'", specifier = ">=1.1.1" },
+    { name = "cymysql", marker = "extra == 'mysql'", specifier = ">=1.1.1" },
     { name = "mariadb", marker = "extra == 'mariadb'", specifier = ">=1.1.14" },
     { name = "mysql-connector-python", marker = "extra == 'mariadb'", specifier = ">=9.7.0" },
+    { name = "mysql-connector-python", marker = "extra == 'mysql'", specifier = ">=9.7.0" },
     { name = "mysqlclient", marker = "extra == 'mariadb'", specifier = ">=2.2.8" },
+    { name = "mysqlclient", marker = "extra == 'mysql'", specifier = ">=2.2.8" },
     { name = "pg8000", marker = "extra == 'postgres'", specifier = ">=1.31.5" },
     { name = "psycopg", marker = "extra == 'postgres'", specifier = ">=3.3.4" },
     { name = "psycopg2", marker = "extra == 'postgres'", specifier = ">=2.9.12" },
     { name = "psycopg2cffi", marker = "extra == 'postgres'", specifier = ">=2.9.0" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
     { name = "pymysql", marker = "extra == 'mariadb'", specifier = ">=1.2.0" },
+    { name = "pymysql", marker = "extra == 'mysql'", specifier = ">=1.2.0" },
     { name = "sqlalchemy", specifier = ">=2.0.41" },
     { name = "sqlcipher3", marker = "extra == 'sqlite'", specifier = ">=0.6.2" },
 ]
-provides-extras = ["postgres", "sqlite", "mariadb"]
+provides-extras = ["postgres", "sqlite", "mariadb", "mysql"]
 
 [package.metadata.requires-dev]
 dev = [
