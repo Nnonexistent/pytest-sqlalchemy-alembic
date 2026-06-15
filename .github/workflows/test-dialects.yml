@@ -1,7 +1,6 @@
 name: "Test all dialects"
 
 on:
-  workflow_call:
   workflow_dispatch:
     inputs:
       sqlite:
@@ -23,21 +22,21 @@ on:
 
 jobs:
   dialect-sqlite:
-    if: ${{ github.event.inputs.sqlite == 'true' }}
+    if: ${{ inputs.sqlite == 'true' }}
     uses: ./.github/workflows/dialect-sqlite.yml
     secrets: inherit
 
   dialect-postgresql:
-    if: ${{ github.event.inputs.postgresql == 'true' }}
+    if: ${{ inputs.postgresql == 'true' }}
     uses: ./.github/workflows/dialect-postgresql.yml
     secrets: inherit
 
   dialect-mariadb:
-    if: ${{ github.event.inputs.mariadb == 'true' }}
+    if: ${{ inputs.mariadb == 'true' }}
     uses: ./.github/workflows/dialect-mariadb.yml
     secrets: inherit
 
   dialect-mysql:
-    if: ${{ github.event.inputs.mysql == 'true' }}
+    if: ${{ inputs.mysql == 'true' }}
     uses: ./.github/workflows/dialect-mysql.yml
     secrets: inherit
