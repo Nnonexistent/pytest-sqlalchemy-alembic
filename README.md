@@ -28,14 +28,25 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 
 | Driver | Status |
 | ------ | ------ |
+| `sqlite+pysqlite` | ✅ Supported
+| `sqlite+pysqlcipher` | ✅ Supported
 | `postgresql+psycopg` | ✅ Supported
 | `postgresql+psycopg2` | ✅ Supported
-| `postgresql+pg8000` | ❌
-| `postgresql+psycopg2cffi` | ❌
+| `postgresql+pg8000` | ✅ Supported
+| `postgresql+psycopg2cffi` | ✅ Supported
 | `postgresql+asyncpg` | ❌
-| `mysql+pymysql` | ❌
-| `mariadb+pymysql` | ❌
-| `sqlite` | ✅ Supported
+| `mariadb+mysqldb` | ✅ Supported
+| `mariadb+pymysql` | ✅ Supported
+| `mariadb+mariadbconnector` | ✅ Supported
+| `mariadb+asyncmy` | ❌
+| `mariadb+aiomysql` | ❌
+| `mariadb+cymysql` | ✅ Supported
+| `mysql+mysqldb` | ✅ Supported
+| `mysql+pymysql` | ✅ Supported
+| `mysql+mysqlconnector` | ✅ Supported
+| `mysql+asyncmy` | ❌
+| `mysql+aiomysql` | ❌
+| `mysql+cymysql` | ✅ Supported
 
 > [!NOTE]
 > If you need an implementation for your particular SQLAlchemy driver, please consider contributing to this project.

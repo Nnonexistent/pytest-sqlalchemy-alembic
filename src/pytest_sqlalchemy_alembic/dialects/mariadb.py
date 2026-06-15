@@ -1,16 +1,17 @@
-import os
+from contextlib import suppress
 from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy import Engine, create_engine
+from sqlalchemy.exc import OperationalError
 from typing_extensions import Self
 
 from .base import BaseDatabaseManager
 
 
-class PostgresqlManager(BaseDatabaseManager):
+class MariaDBManager(BaseDatabaseManager):
     def __enter__(self) -> Self:
-        self.connection = self.engine.connect().execution_options(isolation_level='AUTOCOMMIT')
+        self.connection = self.engine.connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
@@ -24,19 +25,29 @@ class PostgresqlManager(BaseDatabaseManager):
 
     def drop_test_database(self) -> None:
         self.check()
-        self.connection.execute(sa.text(f'DROP DATABASE IF EXISTS {self.test_engine.url.database} WITH (FORCE);'))
+        connection_ids = self.connection.execute(
+            sa.text("""
+                SELECT id FROM information_schema.processlist
+                WHERE db = :db_name AND id != CONNECTION_ID()
+            """),
+            {'db_name': self.test_engine.url.database},
+        )
+
+        for cid in [row[0] for row in connection_ids.fetchall()]:
+            with suppress(OperationalError):  # connection may already be gone
+                self.connection.execute(sa.text(f'KILL CONNECTION {cid}'))
+
+        self.connection.execute(sa.text(f'DROP DATABASE IF EXISTS `{self.test_engine.url.database}`'))
 
     def create_test_database(self) -> None:
         self.check()
-        # if connection to postgres is made with passwordless access using the 'trust' authentication method `url.username` may be empty
-        owner = self.test_engine.url.username or os.environ.get('USER')
-        self.connection.execute(sa.text(f'CREATE DATABASE {self.test_engine.url.database} OWNER {owner};'))
+        self.connection.execute(sa.text(f'CREATE DATABASE {self.test_engine.url.database};'))
 
     def test_database_exists(self) -> bool:
         self.check()
         return (
             self.connection.scalar(
-                sa.text('SELECT 1 FROM pg_catalog.pg_database WHERE datname = :dbname'),
+                sa.text('SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = :dbname'),
                 parameters={'dbname': self.test_engine.url.database},
             )
             is not None
