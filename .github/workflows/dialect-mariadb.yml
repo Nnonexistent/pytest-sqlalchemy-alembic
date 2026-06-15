@@ -47,6 +47,9 @@ jobs:
           enable-cache: true
           cache-suffix: mariadb-${{ matrix.python_version }}
 
+      - name: Install pre-requisite packages
+        run: sudo apt-get update && sudo apt-get install -y libmariadb-dev
+
       - name: Run example project tests
         working-directory: example_project
         run: uv run --extra mariadb pytest
