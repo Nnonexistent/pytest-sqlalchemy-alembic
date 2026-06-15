@@ -40,11 +40,6 @@ dev = [
 [project.entry-points.pytest11]
 sqlalchemy-alembic = "pytest_sqlalchemy_alembic.plugin"
 
-[project.optional-dependencies]
-mariadb = [
-    "mariadb[binary]>=2.0.0rc2",
-]
-
 [build-system]
 build-backend = "uv_build"
 requires = ["uv_build>=0.11.18,<0.12"]
