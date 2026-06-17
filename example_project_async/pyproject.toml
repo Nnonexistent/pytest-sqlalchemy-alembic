@@ -1,0 +1,62 @@
+[project]
+classifiers = [
+  "Private :: Do Not Upload",
+]
+dependencies = [
+  "alembic>=1.18.4",
+  "pydantic-settings>=2.14.1",
+  "asyncpg>=0.31.0",
+  "sqlalchemy[asyncio]>=2.0.49",
+]
+description = "Example project to test pytest-sqlalchemy-alembic plugin"
+name = "example-project-async"
+requires-python = ">=3.10"
+version = "0.1.0"
+
+[project.optional-dependencies]
+sqlite = [
+    "aiosqlite>=0.22.1",
+]
+
+[dependency-groups]
+dev = [
+  "ipython>=8.39.0",
+  "mypy>=2.1.0",
+  "pytest>=9.0.3",
+  "pytest-asyncio>=1.4.0",
+  "pytest-sqlalchemy-alembic>=0.1.0",
+]
+
+[tool.uv]
+reinstall-package = ["pytest-sqlalchemy-alembic"]
+
+[tool.uv.sources]
+pytest-sqlalchemy-alembic = {path = "../"}
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = ["error"]
+sqlalchemy_session_maker = "example_project_async.db:AsyncSessionLocal"
+
+[tool.alembic]
+file_template = "%%(year)d-%%(month).2d-%%(day).2d_%%(rev)s_%%(slug)s"
+prepend_sys_path = ["."]
+script_location = "%(here)s/alembic"
+
+[[tool.alembic.post_write_hooks]]
+executable = "ruff"
+name = "ruff_format"
+options = "format REVISION_SCRIPT_FILENAME"
+type = "exec"
+
+[[tool.alembic.post_write_hooks]]
+executable = "ruff"
+name = "ruff_sort"
+options = "check --select I --fix REVISION_SCRIPT_FILENAME"
+type = "exec"
+
+[[tool.alembic.post_write_hooks]]
+executable = "ruff"
+name = "ruff_lint"
+options = "check --fix REVISION_SCRIPT_FILENAME"
+type = "exec"
