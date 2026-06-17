@@ -10,14 +10,23 @@ from alembic import context
 
 __import__('example_project_async.models')
 
+config = context.config
+config.set_main_option('.', '.')  # workaround to create a config object
+
+target_metadata = Base.metadata
+
+if not config.get_main_option('sqlalchemy.url'):
+    config.set_main_option('sqlalchemy.url', settings.DATABASE_URL)
+
 
 def run_migrations_offline():
+    url = config.get_main_option('sqlalchemy.url')
     context.configure(
-        url=settings.DATABASE_URL,
+        url=url,
         compare_type=True,
         compare_server_default=True,
         transaction_per_migration=True,
-        target_metadata=Base.metadata,
+        target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={'paramstyle': 'named'},
     )
@@ -33,7 +42,8 @@ def run_migrations_online() -> None:
 
 async def run_async_migrations():
     connectable = async_engine_from_config(
-        {'sqlalchemy.url': settings.DATABASE_URL},
+        config.get_section(config.config_ini_section, {}),
+        prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
 
@@ -49,7 +59,7 @@ def sync_run_migrations(connection: Connection) -> None:
         compare_server_default=True,
         transaction_per_migration=True,
         connection=connection,
-        target_metadata=Base.metadata,
+        target_metadata=target_metadata,
     )
 
     with context.begin_transaction():

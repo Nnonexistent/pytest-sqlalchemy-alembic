@@ -13,6 +13,18 @@ requires-python = ">=3.10"
 version = "0.1.0"
 
 [project.optional-dependencies]
+mariadb = [
+  "cymysql>=1.1.1",
+  "mariadb>=1.1.14",
+  "mysqlclient>=2.2.8",
+  "pymysql>=1.2.0",
+]
+mysql = [
+  "cymysql>=1.1.1",
+  "mysql-connector-python>=9.7.0",
+  "mysqlclient>=2.2.8",
+  "pymysql>=1.2.0",
+]
 postgres = [
   "pg8000>=1.31.5",
   "psycopg>=3.3.4",
@@ -20,19 +32,7 @@ postgres = [
   "psycopg2cffi>=2.9.0",
 ]
 sqlite = [
-    "sqlcipher3>=0.6.2",
-]
-mariadb = [
-    "cymysql>=1.1.1",
-    "mariadb>=1.1.14",
-    "mysqlclient>=2.2.8",
-    "pymysql>=1.2.0",
-]
-mysql = [
-    "cymysql>=1.1.1",
-    "mysql-connector-python>=9.7.0",
-    "mysqlclient>=2.2.8",
-    "pymysql>=1.2.0",
+  "sqlcipher3>=0.6.2",
 ]
 
 [dependency-groups]
