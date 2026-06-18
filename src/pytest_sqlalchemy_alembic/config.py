@@ -89,7 +89,7 @@ class PluginConfig:
             session_maker = cls.import_from_string(session_maker_path)
 
         if not isinstance(session_maker, (sessionmaker, async_sessionmaker)):
-            msg = f'`sqlalchemy_session_maker` must be a sessionmaker, got {type(session_maker).__name__!r}'
+            msg = f'`sqlalchemy_session_maker` must be a sessionmaker or async_sessionmaker, got {type(session_maker).__name__!r}'
             raise ConfigValidationError(msg)
 
         return session_maker
@@ -144,7 +144,7 @@ class PluginConfig:
                 raise ConfigValidationError(msg)
 
         if not isinstance(engine, (sa.Engine, AsyncEngine)):
-            msg = f'`sqlalchemy_engine` must be an Engine, got {type(engine).__name__!r}'
+            msg = f'`sqlalchemy_engine` must be an Engine or AsyncEngine, got {type(engine).__name__!r}'
             raise ConfigValidationError(msg)
         return engine
 

@@ -112,7 +112,7 @@ def sqlalchemy_alembic_plugin_config() -> PluginConfig:
 | `sqlalchemy_engine_url`    | SQLAlchemy engine URL. Extracted from `engine` if empty
 | `sqlalchemy_engine_kwargs` | Import path to a dict containing engine kwargs
 | `sqlalchemy_orm_loader`    | Import path to module or callable that loads all ORM necessary models
-| `sqlalchemy_engine_scope`  | Defines at which scope test engine should activated (`session` or `function`). <br> Default: `session`
+| `sqlalchemy_engine_scope`  | Defines at which scope test engine should be activated (`session` or `function`). <br> Default: `session`
 
 ### Fixture override options
 
@@ -126,7 +126,7 @@ Arguments of `PluginConfig.build` class method to use in the `sqlalchemy_alembic
 | `engine_url`    | `str` | SQLAlchemy engine URL
 | `engine_kwargs` | `dict[str, Any]` | `dict` with kwargs for `sa.create_engine` function. E.g. `{'json_serializer': my_json_serializer}`
 | `orm_loader`    | `Callable[[], Any]` | Callable, that will load all ORM necessary models
-| `engine_scope`  | `Literal['session', 'function']` | Defines at which scope test engine should activated
+| `engine_scope`  | `Literal['session', 'function']` | Defines at which scope test engine should be activated
 
 
 ## Combining file configuration and fixture override
