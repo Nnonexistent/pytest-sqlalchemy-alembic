@@ -37,12 +37,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addini('sqlalchemy_engine_kwargs', 'Import path to a dict containing engine kwargs', 'string', default=None)
     parser.addini('sqlalchemy_orm_loader', 'Import path to module or callable that loads all ORM necessary models', 'string', default=None)
     parser.addini('sqlalchemy_metadata', 'Import path to SQLAlchemy metadata. Usually `metadata` attribute of a declarative base class', 'string', default=None)
-    parser.addini('sqlalchemy_engine_scope', 'Define at which scope test engine should activated ("session" or "function")', 'string', default='session')
+    parser.addini('sqlalchemy_engine_scope', 'Defines at which scope test engine should activated ("session" or "function")', 'string', default='session')
 
 
 @pytest.fixture(scope='session')
 def sqlalchemy_alembic_plugin_config(pytestconfig: pytest.Config) -> PluginConfig:
-    """Configuration fixture for pytest-sqlalchemy-alembic plugin. Override it to configure plugin behavior."""  # noqa: D401
+    """Extension point to override config values for pytest-sqlalchemy-alembic plugin from python context."""
     return PluginConfig.build(pytestconfig)
 
 
