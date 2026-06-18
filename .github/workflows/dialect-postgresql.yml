@@ -12,7 +12,24 @@ jobs:
       matrix:
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         postgres_version: ["14", "15", "16", "17", "18"]
-        drivername: ["postgresql+psycopg", "postgresql+psycopg2", "postgresql+pg8000", "postgresql+psycopg2cffi"]
+        drivername:
+          - "postgresql+psycopg"
+          - "postgresql+psycopg2"
+          - "postgresql+pg8000"
+          - "postgresql+psycopg2cffi"
+          - "postgresql+asyncpg"
+
+        include:
+          - drivername: "postgresql+psycopg"
+            project_directory: example_project
+          - drivername: "postgresql+psycopg2"
+            project_directory: example_project
+          - drivername: "postgresql+pg8000"
+            project_directory: example_project
+          - drivername: "postgresql+psycopg2cffi"
+            project_directory: example_project
+          - drivername: "postgresql+asyncpg"
+            project_directory: example_project_async
 
     services:
       postgres:
@@ -49,5 +66,5 @@ jobs:
           cache-suffix: postgres-${{ matrix.python_version }}
 
       - name: Run example project tests
-        working-directory: example_project
+        working-directory: ${{ matrix.project_directory }}
         run: uv run --extra postgres pytest

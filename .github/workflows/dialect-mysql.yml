@@ -12,7 +12,27 @@ jobs:
       matrix:
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         mysql_version: ["8.0", "8.4", "9.7"]
-        drivername: ["mysql+mysqldb", "mysql+pymysql", "mysql+mysqlconnector", "mysql+cymysql"]
+        drivername:
+          - "mysql+mysqldb"
+          - "mysql+pymysql"
+          - "mysql+mysqlconnector"
+          - "mysql+cymysql"
+          - "mysql+asyncmy"
+          - "mysql+aiomysql"
+
+        include:
+          - drivername: "mysql+mysqldb"
+            project_directory: example_project
+          - drivername: "mysql+pymysql"
+            project_directory: example_project
+          - drivername: "mysql+mysqlconnector"
+            project_directory: example_project
+          - drivername: "mysql+cymysql"
+            project_directory: example_project
+          - drivername: "mysql+asyncmy"
+            project_directory: example_project_async
+          - drivername: "mysql+aiomysql"
+            project_directory: example_project_async
 
     services:
       mysql:
@@ -46,5 +66,5 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libmysqlclient-dev
 
       - name: Run example project tests
-        working-directory: example_project
+        working-directory: ${{ matrix.project_directory }}
         run: uv run --extra mysql pytest

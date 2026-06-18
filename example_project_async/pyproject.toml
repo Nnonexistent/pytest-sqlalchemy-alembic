@@ -19,6 +19,14 @@ postgres = [
 sqlite = [
   "aiosqlite>=0.22.1",
 ]
+mariadb = [
+    "aiomysql>=0.3.2",
+    "asyncmy>=0.2.11",
+]
+mysql = [
+    "aiomysql>=0.3.2",
+    "asyncmy>=0.2.11",
+]
 
 [dependency-groups]
 dev = [

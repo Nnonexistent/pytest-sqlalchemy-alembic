@@ -21,9 +21,13 @@ DATABASE_MANAGERS: dict[str, type[BaseDatabaseManager]] = {
     'mariadb+pymysql': MariaDBManager,
     'mariadb+mariadbconnector': MariaDBManager,
     'mariadb+cymysql': MariaDBManager,
+    'mariadb+asyncmy': MariaDBManager,
+    'mariadb+aiomysql': MariaDBManager,
     'mysql': MariaDBManager,
     'mysql+mysqldb': MariaDBManager,
     'mysql+pymysql': MariaDBManager,
     'mysql+mysqlconnector': MariaDBManager,
     'mysql+cymysql': MariaDBManager,
+    'mysql+asyncmy': MariaDBManager,
+    'mysql+aiomysql': MariaDBManager,
 }
