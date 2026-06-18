@@ -30,12 +30,10 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 * `alembic` >= 1.16
 * `pytest` >= 8.4
 * `pytest-xdist` >= 3.0 (Optional)
+* `pytest-asyncio` >= 1.3.0 (Optional)
 
 
 ## Supported dialects
-
-> [!WARNING]
-> Async engines are not yet supported
 
 | Driver | Status |
 | ------ | ------ |
@@ -45,18 +43,18 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 | `postgresql+psycopg2` | ✅ Supported
 | `postgresql+pg8000` | ✅ Supported
 | `postgresql+psycopg2cffi` | ✅ Supported
-| `postgresql+asyncpg` | ❌
+| `postgresql+asyncpg` | ✅ Supported
 | `mariadb+mysqldb` | ✅ Supported
 | `mariadb+pymysql` | ✅ Supported
 | `mariadb+mariadbconnector` | ✅ Supported
-| `mariadb+asyncmy` | ❌
-| `mariadb+aiomysql` | ❌
+| `mariadb+asyncmy` | ✅ Supported
+| `mariadb+aiomysql` | ✅ Supported
 | `mariadb+cymysql` | ✅ Supported
 | `mysql+mysqldb` | ✅ Supported
 | `mysql+pymysql` | ✅ Supported
 | `mysql+mysqlconnector` | ✅ Supported
-| `mysql+asyncmy` | ❌
-| `mysql+aiomysql` | ❌
+| `mysql+asyncmy` | ✅ Supported
+| `mysql+aiomysql` | ✅ Supported
 | `mysql+cymysql` | ✅ Supported
 
 > [!NOTE]
@@ -114,7 +112,7 @@ def sqlalchemy_alembic_plugin_config() -> PluginConfig:
 | `sqlalchemy_engine_url`    | SQLAlchemy engine URL. Extracted from `engine` if empty
 | `sqlalchemy_engine_kwargs` | Import path to a dict containing engine kwargs
 | `sqlalchemy_orm_loader`    | Import path to module or callable that loads all ORM necessary models
-
+| `sqlalchemy_engine_scope`  | Defines at which scope test engine should be activated (`session` or `function`). <br> Default: `session`
 
 ### Fixture override options
 
@@ -123,11 +121,12 @@ Arguments of `PluginConfig.build` class method to use in the `sqlalchemy_alembic
 | Argument | Type | Description
 | -------- | ---- | -----------
 | `session_maker` | `sa.orm.sessionmaker[Session]` | Instance of a sessionmaker
-| `metadata`      | `sa.MetaData | Sequence[sa.MetaData]` | SQLAlchemy metadata
+| `metadata`      | `sa.MetaData \| Sequence[sa.MetaData]` | SQLAlchemy metadata
 | `engine`        | `sa.Engine` | Sqlalchemy engine instance
 | `engine_url`    | `str` | SQLAlchemy engine URL
 | `engine_kwargs` | `dict[str, Any]` | `dict` with kwargs for `sa.create_engine` function. E.g. `{'json_serializer': my_json_serializer}`
 | `orm_loader`    | `Callable[[], Any]` | Callable, that will load all ORM necessary models
+| `engine_scope`  | `Literal['session', 'function']` | Defines at which scope test engine should be activated
 
 
 ## Combining file configuration and fixture override
@@ -188,5 +187,6 @@ def test_my_service():
 
 | Fixture | Scope | Output | Description |
 | ------- | ----- | ------ | ----------- |
-| `sqlalchemy_alembic_setup` | session | Test SQLAlchemy engine | Autouse fixture that creates and migrates the test database and rebinds the configured sessionmaker
 | `sqlalchemy_alembic_plugin_config` | session | This plugin's config | Extension point to override config values from python context
+| `sqlalchemy_alembic_setup_session` | session | Test SQLAlchemy engine | Session-scoped fixture to set up test database
+| `sqlalchemy_alembic_setup_session` | function | Test SQLAlchemy engine or `None` | Function-scoped fixture to set up test database. <br>Used only in case of `engine_scope='function'`

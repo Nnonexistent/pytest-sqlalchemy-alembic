@@ -1,0 +1,38 @@
+services:
+
+  postgres:
+    image: postgres:18
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    ports:
+      - 127.0.0.1:5432:5432
+    environment:
+      - POSTGRES_PASSWORD=example
+      - POSTGRES_USER=example
+    restart: on-failure
+    healthcheck:
+      test: pg_isready -U example
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mariadb:
+    image: mariadb:12.3
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - 127.0.0.1:3306:3306
+    environment:
+      - MARIADB_DATABASE=example
+      - MARIADB_ROOT_PASSWORD=example
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
+  mariadb_data:

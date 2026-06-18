@@ -1,47 +1,45 @@
 import os
-from typing import Any
+from collections.abc import AsyncGenerator, Generator
 
 import sqlalchemy as sa
-from sqlalchemy import Engine, create_engine
-from typing_extensions import Self
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .base import BaseDatabaseManager
 
 
 class PostgresqlManager(BaseDatabaseManager):
-    def __enter__(self) -> Self:
-        self.connection = self.engine.connect().execution_options(isolation_level='AUTOCOMMIT')
-        return self
+    def make_connection(self) -> Generator[sa.Connection, None, None]:
+        assert isinstance(self.engine, sa.Engine)
+        with self.engine.connect().execution_options(isolation_level='AUTOCOMMIT') as connection:
+            yield connection
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self.connection.close()
+    async def make_async_connection(self) -> AsyncGenerator[AsyncConnection]:
+        assert isinstance(self.engine, AsyncEngine)
+        async with self.engine.connect() as connection:
+            new_connection = await connection.execution_options(isolation_level='AUTOCOMMIT')
+            yield new_connection
+            await new_connection.aclose()
 
-    def create_test_engine(self, worker_id: str, engine_kwargs: dict[str, Any]) -> Engine:
+    def make_test_engine_url(self, worker_id: str) -> sa.URL:
         url = self.engine.url
-        test_db_url = url.set(database=f'{url.database}_test_{worker_id}')
-        self.test_engine = create_engine(test_db_url, **engine_kwargs)
-        return self.test_engine
+        return url.set(database=f'{url.database}_test_{worker_id}')
 
-    def drop_test_database(self) -> None:
+    def drop_test_database(self, connection: sa.Connection) -> None:
         self.check()
-        self.connection.execute(sa.text(f'DROP DATABASE IF EXISTS {self.test_engine.url.database} WITH (FORCE);'))
+        connection.execute(sa.text(f'DROP DATABASE IF EXISTS {self.test_engine.url.database} WITH (FORCE);'))
 
-    def create_test_database(self) -> None:
+    def create_test_database(self, connection: sa.Connection) -> None:
         self.check()
         # if connection to postgres is made with passwordless access using the 'trust' authentication method `url.username` may be empty
         owner = self.test_engine.url.username or os.environ.get('USER')
-        self.connection.execute(sa.text(f'CREATE DATABASE {self.test_engine.url.database} OWNER {owner};'))
+        connection.execute(sa.text(f'CREATE DATABASE {self.test_engine.url.database} OWNER {owner};'))
 
-    def test_database_exists(self) -> bool:
+    def test_database_exists(self, connection: sa.Connection) -> bool:
         self.check()
         return (
-            self.connection.scalar(
+            connection.scalar(
                 sa.text('SELECT 1 FROM pg_catalog.pg_database WHERE datname = :dbname'),
                 parameters={'dbname': self.test_engine.url.database},
             )
             is not None
         )
-
-    def check(self):
-        super().check()
-        assert getattr(self, 'connection', None) is not None, 'Connection has not been created yet. Use calls inside context manager'

@@ -12,7 +12,27 @@ jobs:
       matrix:
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         mariadb_version: ["10.6", "10.11", "11.8", "12.3"]
-        drivername: ["mariadb+mysqldb", "mariadb+pymysql", "mariadb+mariadbconnector", "mariadb+cymysql"]
+        drivername:
+          - "mariadb+mysqldb"
+          - "mariadb+pymysql"
+          - "mariadb+mariadbconnector"
+          - "mariadb+cymysql"
+          - "mariadb+asyncmy"
+          - "mariadb+aiomysql"
+
+        include:
+          - drivername: "mariadb+mysqldb"
+            project_directory: example_project
+          - drivername: "mariadb+pymysql"
+            project_directory: example_project
+          - drivername: "mariadb+mariadbconnector"
+            project_directory: example_project
+          - drivername: "mariadb+cymysql"
+            project_directory: example_project
+          - drivername: "mariadb+asyncmy"
+            project_directory: example_project_async
+          - drivername: "mariadb+aiomysql"
+            project_directory: example_project_async
 
     services:
       mariadb:
@@ -52,5 +72,5 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libmariadb-dev
 
       - name: Run example project tests
-        working-directory: example_project
+        working-directory: ${{ matrix.project_directory }}
         run: uv run --extra mariadb pytest

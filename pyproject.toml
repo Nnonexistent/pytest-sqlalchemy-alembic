@@ -4,16 +4,17 @@ authors = [
   {name = "Kosma", email = "oversider.kosma@gmail.com"},
 ]
 classifiers = [
-  "Intended Audience :: Developers",
+  "Framework :: AsyncIO",
   "Framework :: Pytest",
+  "Intended Audience :: Developers",
   "Operating System :: OS Independent",
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python",
   "Topic :: Database",
   "Topic :: Software Development :: Testing",
 ]
@@ -39,6 +40,14 @@ dev = [
 
 [project.entry-points.pytest11]
 sqlalchemy-alembic = "pytest_sqlalchemy_alembic.plugin"
+
+[project.optional-dependencies]
+async = [
+  "pytest-asyncio>=1.3.0",
+]
+xdist = [
+  "pytest-xdist>=3.0",
+]
 
 [build-system]
 build-backend = "uv_build"
@@ -107,11 +116,15 @@ convention = "pep257"
 
 [tool.mypy]
 check_untyped_defs = true
+exclude = ["example_project_async/", "example_project/"]
+extra_checks = true
 ignore_missing_imports = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
-strict_equality = true
+python_version = "3.10"
+strict = true
 warn_no_return = true
 warn_redundant_casts = true
+warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true

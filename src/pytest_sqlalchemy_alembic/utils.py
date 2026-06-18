@@ -1,3 +1,5 @@
+import logging
+import threading
 from collections.abc import Sequence
 from importlib import import_module
 from typing import Any
@@ -11,6 +13,8 @@ from alembic.script import ScriptDirectory
 from alembic.util import CommandError as AlembicCommandError
 from alembic.util import load_python_file
 
+_logger = logging.getLogger('pytest-sqlalchemy-alembic')
+
 
 def resolve_worker_id(config: pytest.Config) -> str:
     """Return xdist worker_id when available."""
@@ -20,8 +24,10 @@ def resolve_worker_id(config: pytest.Config) -> str:
     return 'master'
 
 
-def alembic_upgrade(engine: sa.Engine) -> None:
-    url = engine.url.render_as_string(hide_password=False)
+def alembic_upgrade(engine_url: sa.URL) -> None:
+    _logger.info('Migrating database %s', engine_url.database)
+
+    url = engine_url.render_as_string(hide_password=False)
     command_line = AlembicCommandLine()
     options = command_line.parser.parse_args(['upgrade', 'head'])
 
@@ -33,7 +39,11 @@ def alembic_upgrade(engine: sa.Engine) -> None:
         cmd_opts=options,
     )
     cfg.set_main_option('sqlalchemy.url', url)
-    command_line.run_cmd(cfg, options)
+
+    # Run in a new thread to allow asyncio.run in the env.py
+    t = threading.Thread(target=command_line.run_cmd, args=(cfg, options))
+    t.start()
+    t.join()
 
 
 def get_alembic_target_metadata() -> Sequence[sa.MetaData]:

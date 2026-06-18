@@ -6,7 +6,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-__import__('example_project.db')
+__import__('example_project.models')
 
 config = context.config
 
