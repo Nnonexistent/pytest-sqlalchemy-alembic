@@ -25,6 +25,6 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
 
 
 @asynccontextmanager
-async def db_ctx():
+async def db_ctx() -> AsyncGenerator[AsyncSession]:
     async for db in get_db():
         yield db

@@ -3,11 +3,12 @@ from uuid import uuid4
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ..main import create_user, db_ctx
+from ..db import db_ctx
+from ..main import create_user
 from ..models import User
 
 
-def test_create_user(db: Session):
+def test_create_user(db: Session) -> None:
     name = str(uuid4())
     email = f'{uuid4()}@example.com'
 

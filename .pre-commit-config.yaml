@@ -13,13 +13,27 @@ repos:
       - id: ruff-format
         name: "Ruff format"
 
-  # Not using https://github.com/pre-commit/mirrors-mypy as it requires stating dependencies manually
-  # Ref https://stackoverflow.com/a/75003826/2807941
   - repo: local
     hooks:
       - id: mypy
         name: mypy
+        language: system
         entry: uv run mypy
-        require_serial: true  # Single process mode to avoid fork bomb
-        language: python
-        types: [python]
+        args: ["src"]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: mypy-example-project
+        name: mypy for example_project
+        language: system
+        entry: bash -c 'cd example_project && exec uv run mypy .' --
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: mypy-example-project-async
+        name: mypy for example_project_async
+        language: system
+        entry: bash -c 'cd example_project_async && exec uv run mypy .' --
+        pass_filenames: false

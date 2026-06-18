@@ -3,11 +3,12 @@ from uuid import uuid4
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..main import create_user, db_ctx
+from ..db import db_ctx
+from ..main import create_user
 from ..models import User
 
 
-async def test_create_user(db: AsyncSession):
+async def test_create_user(db: AsyncSession) -> None:
     name = str(uuid4())
     email = f'{uuid4()}@example.com'
 

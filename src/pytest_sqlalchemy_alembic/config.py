@@ -27,7 +27,7 @@ class PluginConfig:
         engine: sa.Engine | AsyncEngine,
         database_manager: type[BaseDatabaseManager],
         metadata: Sequence[sa.MetaData],
-        engine_scope: Literal['session', 'module', 'function'],
+        engine_scope: Literal['session', 'function'],
     ):
         self.session_maker = session_maker
         self.engine_kwargs = engine_kwargs
@@ -46,7 +46,7 @@ class PluginConfig:
         engine_url: str | None = None,
         engine_kwargs: dict[str, Any] | None = None,
         orm_loader: Callable[[], None] | None = None,
-        engine_scope: Literal['session', 'module', 'function'] = 'session',
+        engine_scope: Literal['session', 'function'] = 'session',
     ) -> Self:
         session_maker = cls._parse_session_maker(config, session_maker)
         engine_kwargs = cls._parse_engine_kwargs(config, engine_kwargs)
@@ -172,19 +172,17 @@ class PluginConfig:
         return metadata_list
 
     @classmethod
-    def _parse_engine_scope(
-        cls, config: pytest.Config | None, engine_scope: Literal['session', 'module', 'function']
-    ) -> Literal['session', 'module', 'function']:
+    def _parse_engine_scope(cls, config: pytest.Config | None, engine_scope: Literal['session', 'function']) -> Literal['session', 'function']:
         if config is not None:
             engine_scope = config.getini('sqlalchemy_engine_scope') or engine_scope
 
-        if engine_scope not in ('session', 'module', 'function'):
-            msg = f'`sqlalchemy_engine_scope` must be one of "session", "module" or "function", got {engine_scope!r}'
+        if engine_scope not in ('session', 'function'):
+            msg = f'`sqlalchemy_engine_scope` must be one of "session" or "function", got {engine_scope!r}'
             raise ConfigValidationError(msg)
         return engine_scope
 
     @classmethod
-    def _load_orm_models(cls, config: pytest.Config | None, orm_loader: Callable | None) -> None:
+    def _load_orm_models(cls, config: pytest.Config | None, orm_loader: Callable[[], Any] | None) -> None:
         if orm_loader is not None:
             orm_loader()
 

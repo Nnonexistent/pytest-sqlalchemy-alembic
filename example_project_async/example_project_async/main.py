@@ -12,12 +12,12 @@ async def create_user(db: AsyncSession, username: str, email: str) -> User:
     return user
 
 
-async def async_main():
+async def async_main() -> None:
     async with db_ctx() as db:
         await create_user(db, 'john_doe', 'john@example.com')
 
 
-def main():
+def main() -> None:
     import asyncio
 
     asyncio.run(async_main())

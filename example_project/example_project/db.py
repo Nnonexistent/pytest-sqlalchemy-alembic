@@ -1,7 +1,8 @@
+from collections.abc import Generator
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import settings
 
@@ -14,7 +15,7 @@ class Base(DeclarativeBase):
     pass
 
 
-def get_db():
+def get_db() -> Generator[Session]:
     db = SessionLocal()
     try:
         yield db
@@ -23,5 +24,5 @@ def get_db():
 
 
 @contextmanager
-def db_ctx():
+def db_ctx() -> Generator[Session]:
     yield from get_db()

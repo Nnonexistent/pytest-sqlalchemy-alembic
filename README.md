@@ -30,6 +30,7 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 * `alembic` >= 1.16
 * `pytest` >= 8.4
 * `pytest-xdist` >= 3.0 (Optional)
+* `pytest-asyncio` >= 1.3.0 (Optional)
 
 
 ## Supported dialects
@@ -45,7 +46,7 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 | `postgresql+psycopg2` | ✅ Supported
 | `postgresql+pg8000` | ✅ Supported
 | `postgresql+psycopg2cffi` | ✅ Supported
-| `postgresql+asyncpg` | ❌
+| `postgresql+asyncpg` | ✅ Supported
 | `mariadb+mysqldb` | ✅ Supported
 | `mariadb+pymysql` | ✅ Supported
 | `mariadb+mariadbconnector` | ✅ Supported

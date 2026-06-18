@@ -19,7 +19,7 @@ if not config.get_main_option('sqlalchemy.url'):
     config.set_main_option('sqlalchemy.url', settings.DATABASE_URL)
 
 
-def run_migrations_offline():
+def run_migrations_offline() -> None:
     url = config.get_main_option('sqlalchemy.url')
     context.configure(
         url=url,
@@ -40,7 +40,7 @@ def run_migrations_online() -> None:
     asyncio.run(run_async_migrations())
 
 
-async def run_async_migrations():
+async def run_async_migrations() -> None:
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix='sqlalchemy.',

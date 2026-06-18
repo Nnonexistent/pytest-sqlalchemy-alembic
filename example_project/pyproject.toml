@@ -54,11 +54,14 @@ sqlalchemy_session_maker = "example_project.db:SessionLocal"
 
 [tool.mypy]
 check_untyped_defs = true
+extra_checks = true
 ignore_missing_imports = true
-plugins = ["pydantic.mypy"]
-strict_equality = true
+plugins = ["sqlalchemy.ext.mypy.plugin", "pydantic.mypy"]
+python_version = "3.10"
+strict = true
 warn_no_return = true
 warn_redundant_casts = true
+warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true

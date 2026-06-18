@@ -42,6 +42,10 @@ jobs:
         working-directory: example_project
         run: uv run mypy .
 
+      - name: Mypy (Example project async)
+        working-directory: example_project_async
+        run: uv run mypy .
+
   plugin-tests:
     name: Plugin tests
     runs-on: ubuntu-latest

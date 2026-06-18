@@ -37,7 +37,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addini('sqlalchemy_engine_kwargs', 'Import path to a dict containing engine kwargs', 'string', default=None)
     parser.addini('sqlalchemy_orm_loader', 'Import path to module or callable that loads all ORM necessary models', 'string', default=None)
     parser.addini('sqlalchemy_metadata', 'Import path to SQLAlchemy metadata. Usually `metadata` attribute of a declarative base class', 'string', default=None)
-    parser.addini('sqlalchemy_engine_scope', 'Define at which scope test engine should activated (e.g., "session", "module")', 'string', default='session')
+    parser.addini('sqlalchemy_engine_scope', 'Define at which scope test engine should activated ("session" or "function")', 'string', default='session')
 
 
 @pytest.fixture(scope='session')
@@ -48,12 +48,17 @@ def sqlalchemy_alembic_plugin_config(pytestconfig: pytest.Config) -> PluginConfi
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     if session.config.pluginmanager.hasplugin('asyncio'):
-        globals()['setup_session_async'] = pytest.fixture(autouse=True, scope='session', name='sqlalchemy_alembic_setup_session')(setup_session_async)
-        globals()['setup_module_async'] = pytest.fixture(autouse=True, scope='module', name='sqlalchemy_alembic_setup_module')(setup_module_async)
+        from pytest_asyncio import fixture as asyncio_fixture
+
+        globals()['setup_session_async'] = asyncio_fixture(
+            autouse=True,
+            scope='session',
+            loop_scope='session',
+            name='sqlalchemy_alembic_setup_session',
+        )(setup_session_async)
         globals()['setup_function_async'] = pytest.fixture(autouse=True, scope='function', name='sqlalchemy_alembic_setup_function')(setup_function_async)
     else:
         globals()['setup_session_sync'] = pytest.fixture(autouse=True, scope='session', name='sqlalchemy_alembic_setup_session')(setup_session_sync)
-        globals()['setup_module_sync'] = pytest.fixture(autouse=True, scope='module', name='sqlalchemy_alembic_setup_module')(setup_module_sync)
         globals()['setup_function_sync'] = pytest.fixture(autouse=True, scope='function', name='sqlalchemy_alembic_setup_function')(setup_function_sync)
 
 
@@ -124,38 +129,6 @@ async def setup_session_async(
         else:
             alembic_upgrade(database_manager.test_engine.url)
 
-        yield database_manager.test_engine
-
-
-def setup_module_sync(
-    pytestconfig: pytest.Config,
-    sqlalchemy_alembic_plugin_config: PluginConfig,
-) -> Generator[Engine | AsyncEngine | None, None, None]:
-    """Module-scoped fixture to set up test database. Returns test engine instance."""
-    cfg = sqlalchemy_alembic_plugin_config
-    if cfg.engine_scope != 'module':
-        yield None
-        return
-
-    worker_id = resolve_worker_id(pytestconfig)
-
-    with _test_engine_ctx(cfg, worker_id) as database_manager:
-        yield database_manager.test_engine
-
-
-async def setup_module_async(
-    pytestconfig: pytest.Config,
-    sqlalchemy_alembic_plugin_config: PluginConfig,
-) -> AsyncGenerator[Engine | AsyncEngine | None, None]:
-    """Module-scoped fixture to set up test database. Returns test engine instance."""
-    cfg = sqlalchemy_alembic_plugin_config
-    if cfg.engine_scope != 'module':
-        yield None
-        return
-
-    worker_id = resolve_worker_id(pytestconfig)
-
-    async with _async_test_engine_ctx(cfg, worker_id) as database_manager:
         yield database_manager.test_engine
 
 
