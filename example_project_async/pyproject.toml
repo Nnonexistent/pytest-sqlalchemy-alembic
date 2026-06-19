@@ -20,6 +20,7 @@ mariadb = [
 mysql = [
   "aiomysql>=0.3.2",
   "asyncmy>=0.2.11",
+  "cryptography>=49.0.0",
 ]
 postgres = [
   "asyncpg>=0.31.0",
