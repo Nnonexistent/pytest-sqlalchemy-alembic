@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator, Sequence
 
 import pytest
 from sqlalchemy import Engine
@@ -31,19 +31,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=False,
         help='Disable alembic migrations on test setup',
     )
-    parser.addini('sqlalchemy_session_maker', 'Import path to a sessionmaker instance', 'string', default=None)
-    parser.addini('sqlalchemy_engine', 'Import path to SQLAlchemy engine instance', 'string', default=None)
-    parser.addini('sqlalchemy_engine_url', 'SQLAlchemy engine URL', 'string', default=None)
-    parser.addini('sqlalchemy_engine_kwargs', 'Import path to a dict containing engine kwargs', 'string', default=None)
-    parser.addini('sqlalchemy_orm_loader', 'Import path to module or callable that loads all ORM necessary models', 'string', default=None)
-    parser.addini('sqlalchemy_metadata', 'Import path to SQLAlchemy metadata. Usually `metadata` attribute of a declarative base class', 'string', default=None)
-    parser.addini('sqlalchemy_engine_scope', 'Defines at which scope test engine should be activated ("session" or "function")', 'string', default='session')
+    parser.addini('sqlalchemy_alembic_configs', '', 'linelist', default=[])
 
 
 @pytest.fixture(scope='session')
-def sqlalchemy_alembic_plugin_config(pytestconfig: pytest.Config) -> PluginConfig:
+def sqlalchemy_alembic_plugin_configs(pytestconfig: pytest.Config) -> list[PluginConfig]:
     """Extension point to override config values for pytest-sqlalchemy-alembic plugin from python context."""
-    return PluginConfig.build(pytestconfig)
+    return PluginConfig.build_list(pytestconfig)
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
@@ -96,69 +90,103 @@ async def _async_test_engine_ctx(cfg: PluginConfig, worker_id: str) -> AsyncGene
 
 def setup_session_sync(
     pytestconfig: pytest.Config,
-    sqlalchemy_alembic_plugin_config: PluginConfig,
-) -> Generator[Engine | AsyncEngine, None, None]:
+    sqlalchemy_alembic_plugin_configs: list[PluginConfig],
+) -> Generator[Sequence[Engine | AsyncEngine]]:
     """Session-scoped fixture to set up test database. Returns test engine instance."""
-    cfg = sqlalchemy_alembic_plugin_config
     worker_id = resolve_worker_id(pytestconfig)
 
-    with _test_engine_ctx(cfg, worker_id) as database_manager:
-        database_manager.prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
+    with contextlib.ExitStack() as stack:
+        test_engines = []
 
-        if pytestconfig.getoption('nomigrations'):
-            database_manager.create_tables(cfg.metadata)
-        else:
-            alembic_upgrade(database_manager.test_engine.url)
+        for cfg in sqlalchemy_alembic_plugin_configs:
+            database_manager = stack.enter_context(_test_engine_ctx(cfg, worker_id))
+            database_manager.prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
 
-        yield database_manager.test_engine
+            if pytestconfig.getoption('nomigrations'):
+                database_manager.create_tables(cfg.metadata)
+            else:
+                alembic_upgrade(database_manager.test_engine.url)
+
+            test_engines.append(database_manager.test_engine)
+
+        yield tuple(test_engines)
 
 
 async def setup_session_async(
     pytestconfig: pytest.Config,
-    sqlalchemy_alembic_plugin_config: PluginConfig,
-) -> AsyncGenerator[Engine | AsyncEngine, None]:
+    sqlalchemy_alembic_plugin_configs: list[PluginConfig],
+) -> AsyncGenerator[Sequence[Engine | AsyncEngine], None]:
     """Session-scoped fixture to set up test database. Returns test engine instance."""
-    cfg = sqlalchemy_alembic_plugin_config
     worker_id = resolve_worker_id(pytestconfig)
 
-    async with _async_test_engine_ctx(cfg, worker_id) as database_manager:
-        await database_manager.async_prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
+    async with contextlib.AsyncExitStack() as stack:
+        test_engines = []
 
-        if pytestconfig.getoption('nomigrations'):
-            await database_manager.async_create_tables(cfg.metadata)
-        else:
-            alembic_upgrade(database_manager.test_engine.url)
+        for cfg in sqlalchemy_alembic_plugin_configs:
+            database_manager = await stack.enter_async_context(_async_test_engine_ctx(cfg, worker_id))
+            await database_manager.async_prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
 
-        yield database_manager.test_engine
+            if pytestconfig.getoption('nomigrations'):
+                await database_manager.async_create_tables(cfg.metadata)
+            else:
+                alembic_upgrade(database_manager.test_engine.url)
+
+            test_engines.append(database_manager.test_engine)
+
+        yield tuple(test_engines)
 
 
 def setup_function_sync(
     pytestconfig: pytest.Config,
-    sqlalchemy_alembic_plugin_config: PluginConfig,
-) -> Generator[Engine | AsyncEngine | None, None, None]:
+    sqlalchemy_alembic_plugin_configs: list[PluginConfig],
+) -> Generator[Sequence[Engine | AsyncEngine | None], None, None]:
     """Function-scoped fixture to set up test database. Returns test engine instance."""
-    cfg = sqlalchemy_alembic_plugin_config
-    if cfg.engine_scope != 'function':
-        yield None
-        return
-
     worker_id = resolve_worker_id(pytestconfig)
 
-    with _test_engine_ctx(cfg, worker_id) as database_manager:
-        yield database_manager.test_engine
+    with contextlib.ExitStack() as stack:
+        test_engines: list[Engine | AsyncEngine | None] = []
+
+        for cfg in sqlalchemy_alembic_plugin_configs:
+            if cfg.scope != 'function':
+                test_engines.append(None)
+                continue
+
+            database_manager = stack.enter_context(_test_engine_ctx(cfg, worker_id))
+            database_manager.prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
+
+            if pytestconfig.getoption('nomigrations'):
+                database_manager.create_tables(cfg.metadata)
+            else:
+                alembic_upgrade(database_manager.test_engine.url)
+
+            test_engines.append(database_manager.test_engine)
+
+        yield tuple(test_engines)
 
 
 async def setup_function_async(
     pytestconfig: pytest.Config,
-    sqlalchemy_alembic_plugin_config: PluginConfig,
-) -> AsyncGenerator[Engine | AsyncEngine | None, None]:
+    sqlalchemy_alembic_plugin_configs: list[PluginConfig],
+) -> AsyncGenerator[Sequence[Engine | AsyncEngine | None], None]:
     """Function-scoped fixture to set up test database. Returns test engine instance."""
-    cfg = sqlalchemy_alembic_plugin_config
-    if cfg.engine_scope != 'function':
-        yield None
-        return
-
     worker_id = resolve_worker_id(pytestconfig)
 
-    async with _async_test_engine_ctx(cfg, worker_id) as database_manager:
-        yield database_manager.test_engine
+    async with contextlib.AsyncExitStack() as stack:
+        test_engines: list[Engine | AsyncEngine | None] = []
+
+        for cfg in sqlalchemy_alembic_plugin_configs:
+            if cfg.scope != 'function':
+                test_engines.append(None)
+                continue
+
+            database_manager = await stack.enter_async_context(_async_test_engine_ctx(cfg, worker_id))
+            await database_manager.async_prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
+
+            if pytestconfig.getoption('nomigrations'):
+                await database_manager.async_create_tables(cfg.metadata)
+            else:
+                alembic_upgrade(database_manager.test_engine.url)
+
+            test_engines.append(database_manager.test_engine)
+
+        yield tuple(test_engines)

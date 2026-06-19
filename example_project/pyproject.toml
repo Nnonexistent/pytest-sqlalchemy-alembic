@@ -49,9 +49,6 @@ reinstall-package = ["pytest-sqlalchemy-alembic"]
 [tool.uv.sources]
 pytest-sqlalchemy-alembic = {path = "../"}
 
-[tool.pytest.ini_options]
-sqlalchemy_session_maker = "example_project.db:SessionLocal"
-
 [tool.mypy]
 check_untyped_defs = true
 extra_checks = true
