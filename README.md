@@ -188,5 +188,5 @@ def test_my_service():
 | Fixture                             | Scope    | Output                                          | Description
 | ----------------------------------- | -------- | ----------------------------------------------- | -----------
 | `sqlalchemy_alembic_plugin_configs` | session  | List of this plugin configs                     | Extension point to override config values from python context
-| `sqlalchemy_alembic_setup_session`  | session  | Sequence of test SQLAlchemy engines             | Session-scoped fixture to set up test database
-| `sqlalchemy_alembic_setup_function` | function | Sequence of test SQLAlchemy engines or `None`'s | Function-scoped fixture to set up test database. <br>Used only in case of `scope='function'`
+| `sqlalchemy_alembic_setup_session`  | session  | Sequence of test SQLAlchemy engines             | Session-scoped fixture to set up test database and engine
+| `sqlalchemy_alembic_setup_function` | function | Sequence of test SQLAlchemy engines or `None`'s | Function-scoped fixture to set up test engine. <br>Used only in case of `scope='function'`
