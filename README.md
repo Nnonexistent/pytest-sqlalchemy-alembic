@@ -29,33 +29,36 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 * `sqlalchemy` >= 2.0
 * `alembic` >= 1.16
 * `pytest` >= 8.4
+
+<br>
+
 * `pytest-xdist` >= 3.0 (Optional)
 * `pytest-asyncio` >= 1.3.0 (Optional)
 
 
 ## Supported dialects
 
-| Driver | Status |
-| ------ | ------ |
-| `sqlite+pysqlite` | ✅ Supported
-| `sqlite+pysqlcipher` | ✅ Supported
-| `postgresql+psycopg` | ✅ Supported
-| `postgresql+psycopg2` | ✅ Supported
-| `postgresql+pg8000` | ✅ Supported
-| `postgresql+psycopg2cffi` | ✅ Supported
-| `postgresql+asyncpg` | ✅ Supported
-| `mariadb+mysqldb` | ✅ Supported
-| `mariadb+pymysql` | ✅ Supported
+| Driver                     | Status
+| -------------------------- | ------
+| `sqlite+pysqlite`          | ✅ Supported
+| `sqlite+pysqlcipher`       | ✅ Supported
+| `postgresql+psycopg`       | ✅ Supported
+| `postgresql+psycopg2`      | ✅ Supported
+| `postgresql+pg8000`        | ✅ Supported
+| `postgresql+psycopg2cffi`  | ✅ Supported
+| `postgresql+asyncpg`       | ✅ Supported
+| `mariadb+mysqldb`          | ✅ Supported
+| `mariadb+pymysql`          | ✅ Supported
 | `mariadb+mariadbconnector` | ✅ Supported
-| `mariadb+asyncmy` | ✅ Supported
-| `mariadb+aiomysql` | ✅ Supported
-| `mariadb+cymysql` | ✅ Supported
-| `mysql+mysqldb` | ✅ Supported
-| `mysql+pymysql` | ✅ Supported
-| `mysql+mysqlconnector` | ✅ Supported
-| `mysql+asyncmy` | ✅ Supported
-| `mysql+aiomysql` | ✅ Supported
-| `mysql+cymysql` | ✅ Supported
+| `mariadb+asyncmy`          | ✅ Supported
+| `mariadb+aiomysql`         | ✅ Supported
+| `mariadb+cymysql`          | ✅ Supported
+| `mysql+mysqldb`            | ✅ Supported
+| `mysql+pymysql`            | ✅ Supported
+| `mysql+mysqlconnector`     | ✅ Supported
+| `mysql+asyncmy`            | ✅ Supported
+| `mysql+aiomysql`           | ✅ Supported
+| `mysql+cymysql`            | ✅ Supported
 
 > [!NOTE]
 > If you need an implementation for your particular SQLAlchemy driver, please consider contributing to this project.
@@ -65,6 +68,11 @@ It automatically provisions a dedicated test database per worker and runs Alembi
 
 ```bash
 pip install pytest-sqlalchemy-alembic
+```
+or
+```bash
+pip install pytest-sqlalchemy-alembic[xdist]  # with pytest-xdist
+pip install pytest-sqlalchemy-alembic[async]  # with pytest-asyncio
 ```
 
 
@@ -77,15 +85,21 @@ Configuration could be done in `pyproject.toml`, `pytest.ini` or via pytest fixt
 
 ```toml
 [tool.pytest.ini_options]
-sqlalchemy_session_maker = "example_project.db:SessionLocal"
+sqlalchemy_alembic_configs = [
+  {session_maker = "example_project_async.db:AsyncSessionLocal"},
+]
 ```
+In TOML, [array of tables](https://toml.io/en/v1.1.0#array) should be used to provide config values
 
 ### `pytest.ini`
 
 ```ini
 [pytest]
-sqlalchemy_session_maker = example_project.db:SessionLocal
+sqlalchemy_alembic_configs =
+  {"session_maker": "example_project.db:SessionLocal"}
 ```
+
+In INI each line should be a valid JSON object
 
 ### `conftest.py`
 
@@ -95,8 +109,14 @@ from pytest_sqlalchemy_alembic.config import PluginConfig
 from example_project.db import SessionLocal
 
 @pytest.fixture(scope='session')
-def sqlalchemy_alembic_plugin_config() -> PluginConfig:
-    return PluginConfig.build(session_maker=SessionLocal)
+def sqlalchemy_alembic_plugin_configs(pytestconfig: pytest.Config) -> list[PluginConfig]:
+    return [
+        PluginConfig.build(
+            session_maker=SessionLocal,
+            create_db=pytestconfig.getoption('create_db'),
+            no_migrations=pytestconfig.getoption('no_migrations'),
+        )
+    ]
 ```
 
 
@@ -104,51 +124,31 @@ def sqlalchemy_alembic_plugin_config() -> PluginConfig:
 
 ### Config file options
 
-| Option | Description
-| ------ | -----------
-| `sqlalchemy_session_maker` | Import path to a sessionmaker instance
-| `sqlalchemy_metadata`      | Import path to SQLAlchemy metadata. Usually `metadata` attribute of a declarative base class. <br>Used for non-alembic database schema population based on metadata. Metadata is extracted from the alembic config if this option is empty
-| `sqlalchemy_engine`        | Import path to SQLAlchemy engine instance. <br>If empty, created using `engine_url` and `engine_kwargs` or extracted from the sessionmaker instance
-| `sqlalchemy_engine_url`    | SQLAlchemy engine URL. Extracted from `engine` if empty
-| `sqlalchemy_engine_kwargs` | Import path to a dict containing engine kwargs
-| `sqlalchemy_orm_loader`    | Import path to module or callable that loads all ORM necessary models
-| `sqlalchemy_engine_scope`  | Defines at which scope test engine should be activated (`session` or `function`). <br> Default: `session`
+| Option               | Description
+| -------------------- | -----------
+| `session_maker`      | Import path to a sessionmaker instance
+| `metadata`           | Import path to SQLAlchemy metadata. Usually `metadata` attribute of a declarative base class. <br>Used for non-alembic database schema population based on metadata. Metadata is extracted from the alembic config if this option is empty
+| `engine`             | Import path to SQLAlchemy engine instance. <br>If empty, created using `engine_url` and `engine_kwargs` or extracted from the sessionmaker instance
+| `engine_url`         | SQLAlchemy engine URL. Extracted from `engine` if empty
+| `engine_kwargs`      | Import path to a dict containing engine kwargs
+| `orm_loader`         | Import path to module or callable that loads all ORM necessary models
+| `scope`              | Defines at which scope test engine should be activated (`session` or `function`). <br> Default: `session`
+| `skip_db_management` | If this entry should skip test database management. <br>Useful in case of multiple engines, which use the same database. <br>Default: `false`
 
 ### Fixture override options
 
-Arguments of `PluginConfig.build` class method to use in the `sqlalchemy_alembic_plugin_config` fixture.
+Arguments of `PluginConfig.build` class method to use in the `sqlalchemy_alembic_plugin_configs` fixture.
 
-| Argument | Type | Description
-| -------- | ---- | -----------
-| `session_maker` | `sa.orm.sessionmaker[Session]` | Instance of a sessionmaker
-| `metadata`      | `sa.MetaData \| Sequence[sa.MetaData]` | SQLAlchemy metadata
-| `engine`        | `sa.Engine` | Sqlalchemy engine instance
-| `engine_url`    | `str` | SQLAlchemy engine URL
-| `engine_kwargs` | `dict[str, Any]` | `dict` with kwargs for `sa.create_engine` function. E.g. `{'json_serializer': my_json_serializer}`
-| `orm_loader`    | `Callable[[], Any]` | Callable, that will load all ORM necessary models
-| `engine_scope`  | `Literal['session', 'function']` | Defines at which scope test engine should be activated
-
-
-## Combining file configuration and fixture override
-
-In this example `session_maker` will be defined in `pyproject.toml` and `metadata` will be directly imported in the `conftest.py`.
-
-```toml
-# pyproject.toml
-[tool.pytest.ini_options]
-sqlalchemy_session_maker = "example_project.db:SessionLocal"
-```
-
-```python
-# conftest.py
-import pytest
-from pytest_sqlalchemy_alembic.config import PluginConfig
-from example_project.models import Base
-
-@pytest.fixture(scope='session')
-def sqlalchemy_alembic_plugin_config(pytestconfig: pytest.Config) -> PluginConfig:
-    return PluginConfig.build(config=pytestconfig, metadata=Base.metadata)
-```
+| Argument             | Type                                   | Description
+| -------------------- | -------------------------------------- | -----------
+| `session_maker`      | `sa.orm.sessionmaker[Session]`         | Instance of a sessionmaker
+| `metadata`           | `sa.MetaData \| Sequence[sa.MetaData]` | SQLAlchemy metadata
+| `engine`             | `sa.Engine`                            | Sqlalchemy engine instance
+| `engine_url`         | `str`                                  | SQLAlchemy engine URL
+| `engine_kwargs`      | `dict[str, Any]`                       | `dict` with kwargs for `sa.create_engine` function. E.g. `{'json_serializer': my_json_serializer}`
+| `orm_loader`         | `Callable[[], Any]`                    | Callable, that will load all ORM necessary models
+| `scope`              | `Literal['session', 'function']`       | Defines at which scope test engine should be activated
+| `skip_db_management` | `bool`                                 | If this entry should skip test database management. <br>Useful in case of multiple engines, which use the same database
 
 
 ## Usage
@@ -177,16 +177,16 @@ def test_my_service():
 
 ## Pytest run flags
 
-| Flag | Description |
-| ---- | ----------- |
+| Flag | Description
+| ---- | -----------
 | `--createdb` / `--create-db` | Drop and recreate the test database before the session
 | `--nomigrations` / `--no-migrations` | Skip Alembic migrations and use `metadata.create_all()` instead
 
 
 ## Fixtures
 
-| Fixture | Scope | Output | Description |
-| ------- | ----- | ------ | ----------- |
-| `sqlalchemy_alembic_plugin_config` | session | This plugin's config | Extension point to override config values from python context
-| `sqlalchemy_alembic_setup_session` | session | Test SQLAlchemy engine | Session-scoped fixture to set up test database
-| `sqlalchemy_alembic_setup_session` | function | Test SQLAlchemy engine or `None` | Function-scoped fixture to set up test database. <br>Used only in case of `engine_scope='function'`
+| Fixture                             | Scope    | Output                                          | Description
+| ----------------------------------- | -------- | ----------------------------------------------- | -----------
+| `sqlalchemy_alembic_plugin_configs` | session  | List of this plugin configs                     | Extension point to override config values from python context
+| `sqlalchemy_alembic_setup_session`  | session  | Sequence of test SQLAlchemy engines             | Session-scoped fixture to set up test database
+| `sqlalchemy_alembic_setup_function` | function | Sequence of test SQLAlchemy engines or `None`'s | Function-scoped fixture to set up test database. <br>Used only in case of `scope='function'`

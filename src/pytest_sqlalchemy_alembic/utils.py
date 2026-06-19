@@ -1,8 +1,9 @@
 import logging
 import threading
 from collections.abc import Sequence
+from dataclasses import dataclass, fields
 from importlib import import_module
-from typing import Any
+from typing import Any, get_type_hints
 
 import pytest
 import sqlalchemy as sa
@@ -87,3 +88,19 @@ def import_string(import_path: str) -> Any:
     except (ImportError, AttributeError) as e:
         msg = f'Error importing {import_path!r}: {e}'
         raise ImportError(msg) from e
+
+
+@dataclass
+class TypeCheckDataclass:
+    def __post_init__(self) -> None:
+        resolved_types = get_type_hints(self.__class__)
+
+        for field in fields(self):
+            if not field.init:
+                continue
+
+            value = getattr(self, field.name)
+            expected_type = resolved_types[field.name]
+            if not isinstance(value, expected_type):
+                msg = f"Field '{field.name}' must be of type {expected_type.__name__}, got {type(value).__name__} instead."
+                raise TypeError(msg)

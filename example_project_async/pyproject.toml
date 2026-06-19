@@ -13,19 +13,19 @@ requires-python = ">=3.10"
 version = "0.1.0"
 
 [project.optional-dependencies]
+mariadb = [
+  "aiomysql>=0.3.2",
+  "asyncmy>=0.2.11",
+]
+mysql = [
+  "aiomysql>=0.3.2",
+  "asyncmy>=0.2.11",
+]
 postgres = [
   "asyncpg>=0.31.0",
 ]
 sqlite = [
   "aiosqlite>=0.22.1",
-]
-mariadb = [
-    "aiomysql>=0.3.2",
-    "asyncmy>=0.2.11",
-]
-mysql = [
-    "aiomysql>=0.3.2",
-    "asyncmy>=0.2.11",
 ]
 
 [dependency-groups]
@@ -60,8 +60,9 @@ warn_unused_ignores = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 filterwarnings = ["error"]
-sqlalchemy_session_maker = "example_project_async.db:AsyncSessionLocal"
-asyncio_default_fixture_loop_scope = "function"
+sqlalchemy_alembic_configs = [
+  {session_maker = "example_project_async.db:AsyncSessionLocal"},
+]
 
 [tool.alembic]
 file_template = "%%(year)d-%%(month).2d-%%(day).2d_%%(rev)s_%%(slug)s"

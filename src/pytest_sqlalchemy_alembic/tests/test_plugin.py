@@ -21,7 +21,8 @@ def test_plugin_happy_path_minimal_sessionmaker(pytester: pytest.Pytester) -> No
     pytester.makeini(
         f"""
         [pytest]
-        sqlalchemy_session_maker = {module_name}:SessionLocal
+        sqlalchemy_alembic_configs =
+          {{"session_maker": "{module_name}:SessionLocal"}}
         """
     )
 
@@ -47,7 +48,8 @@ def test_plugin_happy_path_minimal_engine(pytester: pytest.Pytester) -> None:
     pytester.makeini(
         f"""
         [pytest]
-        sqlalchemy_engine = {module_name}:engine
+        sqlalchemy_alembic_configs =
+          {{"engine": "{module_name}:engine"}}
         """
     )
 
@@ -56,11 +58,31 @@ def test_plugin_happy_path_minimal_engine(pytester: pytest.Pytester) -> None:
     result.assert_outcomes(errors=0, passed=1)
 
 
-def test_plugin_load_reports_missing_required_sqlalchemy_config(pytester: pytest.Pytester) -> None:
+def test_plugin_load_empty_config_ok(pytester: pytest.Pytester) -> None:
     pytester.makepyfile(
         """
         def test_unconfigured():
             pass
+        """
+    )
+
+    result = pytester.runpytest_subprocess()
+
+    result.assert_outcomes(passed=1)
+
+
+def test_plugin_load_reports_missing_required_engine_config(pytester: pytest.Pytester) -> None:
+    pytester.makepyfile(
+        """
+        def test_under_configured():
+            pass
+        """
+    )
+    pytester.makeini(
+        """
+        [pytest]
+        sqlalchemy_alembic_configs =
+          {"scope": "session"}
         """
     )
 
