@@ -89,7 +89,7 @@ sqlalchemy_alembic_configs = [
   {session_maker = "example_project_async.db:AsyncSessionLocal"},
 ]
 ```
-In toml, [array of tables](https://toml.io/en/v1.1.0#array) should be used to provide config values
+In TOML, [array of tables](https://toml.io/en/v1.1.0#array) should be used to provide config values
 
 ### `pytest.ini`
 
@@ -99,7 +99,7 @@ sqlalchemy_alembic_configs =
   {"session_maker": "example_project.db:SessionLocal"}
 ```
 
-In ini each line should be a valid JSON object
+In INI each line should be a valid JSON object
 
 ### `conftest.py`
 
@@ -185,8 +185,8 @@ def test_my_service():
 
 ## Fixtures
 
-| Fixture                             | Scope    | Output                           | Description
-| ----------------------------------- | -------- | -------------------------------- | -----------
-| `sqlalchemy_alembic_plugin_configs` | session  | List of this plugin configs      | Extension point to override config values from python context
-| `sqlalchemy_alembic_setup_session`  | session  | Test SQLAlchemy engine           | Session-scoped fixture to set up test database
-| `sqlalchemy_alembic_setup_function` | function | Test SQLAlchemy engine or `None` | Function-scoped fixture to set up test database. <br>Used only in case of `engine_scope='function'`
+| Fixture                             | Scope    | Output                                          | Description
+| ----------------------------------- | -------- | ----------------------------------------------- | -----------
+| `sqlalchemy_alembic_plugin_configs` | session  | List of this plugin configs                     | Extension point to override config values from python context
+| `sqlalchemy_alembic_setup_session`  | session  | Sequence of test SQLAlchemy engines             | Session-scoped fixture to set up test database
+| `sqlalchemy_alembic_setup_function` | function | Sequence of test SQLAlchemy engines or `None`'s | Function-scoped fixture to set up test database. <br>Used only in case of `scope='function'`

@@ -106,7 +106,7 @@ def setup_session_sync(
     pytestconfig: pytest.Config,
     sqlalchemy_alembic_plugin_configs: list[PluginConfig],
 ) -> Generator[Sequence[Engine | AsyncEngine]]:
-    """Session-scoped fixture to set up test database. Returns test engine instance."""
+    """Session-scoped fixture to set up test database. Returns a sequence of test engine instances."""
     worker_id = resolve_worker_id(pytestconfig)
 
     with contextlib.ExitStack() as stack:
@@ -126,7 +126,7 @@ async def setup_session_async(
     pytestconfig: pytest.Config,
     sqlalchemy_alembic_plugin_configs: list[PluginConfig],
 ) -> AsyncGenerator[Sequence[Engine | AsyncEngine], None]:
-    """Session-scoped fixture to set up test database. Returns test engine instance."""
+    """Session-scoped fixture to set up test database. Returns a sequence of test engine instances."""
     worker_id = resolve_worker_id(pytestconfig)
 
     async with contextlib.AsyncExitStack() as stack:
@@ -146,7 +146,7 @@ def setup_function_sync(
     pytestconfig: pytest.Config,
     sqlalchemy_alembic_plugin_configs: list[PluginConfig],
 ) -> Generator[Sequence[Engine | AsyncEngine | None], None, None]:
-    """Function-scoped fixture to set up test database. Returns test engine instance."""
+    """Function-scoped fixture to set up test database. Returns a sequence of test engine instances."""
     worker_id = resolve_worker_id(pytestconfig)
 
     with contextlib.ExitStack() as stack:
@@ -170,7 +170,7 @@ async def setup_function_async(
     pytestconfig: pytest.Config,
     sqlalchemy_alembic_plugin_configs: list[PluginConfig],
 ) -> AsyncGenerator[Sequence[Engine | AsyncEngine | None], None]:
-    """Function-scoped fixture to set up test database. Returns test engine instance."""
+    """Function-scoped fixture to set up test database. Returns a sequence of test engine instances."""
     worker_id = resolve_worker_id(pytestconfig)
 
     async with contextlib.AsyncExitStack() as stack:
