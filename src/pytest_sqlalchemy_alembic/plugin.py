@@ -27,7 +27,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--nomigrations',
         '--no-migrations',
         action='store_true',
-        dest='nomigrations',
+        dest='no_migrations',
         default=False,
         help='Disable alembic migrations on test setup',
     )
@@ -57,9 +57,16 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
 
 @contextlib.contextmanager
-def _test_engine_ctx(cfg: PluginConfig, worker_id: str) -> Generator[BaseDatabaseManager, None, None]:
+def _test_engine_ctx(cfg: PluginConfig, worker_id: str, *, db_management: bool) -> Generator[BaseDatabaseManager, None, None]:
     database_manager = cfg.database_manager(cfg.engine)
     test_engine = database_manager.create_test_engine(worker_id, cfg.engine_kwargs)
+
+    if db_management:
+        database_manager.prepare_test_databases(create_db=cfg.create_db)
+        if cfg.no_migrations:
+            database_manager.create_tables(cfg.metadata)
+        else:
+            alembic_upgrade(database_manager.test_engine.url)
 
     if cfg.session_maker is not None:
         cfg.session_maker.configure(bind=test_engine)
@@ -73,9 +80,16 @@ def _test_engine_ctx(cfg: PluginConfig, worker_id: str) -> Generator[BaseDatabas
 
 
 @contextlib.asynccontextmanager
-async def _async_test_engine_ctx(cfg: PluginConfig, worker_id: str) -> AsyncGenerator[BaseDatabaseManager]:
+async def _async_test_engine_ctx(cfg: PluginConfig, worker_id: str, *, db_management: bool) -> AsyncGenerator[BaseDatabaseManager]:
     database_manager = cfg.database_manager(cfg.engine)
     test_engine = database_manager.create_test_engine(worker_id, cfg.engine_kwargs)
+
+    if db_management:
+        await database_manager.async_prepare_test_databases(create_db=cfg.create_db)
+        if cfg.no_migrations:
+            await database_manager.async_create_tables(cfg.metadata)
+        else:
+            alembic_upgrade(database_manager.test_engine.url)
 
     if cfg.session_maker is not None:
         cfg.session_maker.configure(bind=test_engine)
@@ -99,13 +113,9 @@ def setup_session_sync(
         test_engines = []
 
         for cfg in sqlalchemy_alembic_plugin_configs:
-            database_manager = stack.enter_context(_test_engine_ctx(cfg, worker_id))
-            database_manager.prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
-
-            if pytestconfig.getoption('nomigrations'):
-                database_manager.create_tables(cfg.metadata)
-            else:
-                alembic_upgrade(database_manager.test_engine.url)
+            database_manager = stack.enter_context(
+                _test_engine_ctx(cfg, worker_id, db_management=not cfg.skip_db_management),
+            )
 
             test_engines.append(database_manager.test_engine)
 
@@ -123,13 +133,9 @@ async def setup_session_async(
         test_engines = []
 
         for cfg in sqlalchemy_alembic_plugin_configs:
-            database_manager = await stack.enter_async_context(_async_test_engine_ctx(cfg, worker_id))
-            await database_manager.async_prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
-
-            if pytestconfig.getoption('nomigrations'):
-                await database_manager.async_create_tables(cfg.metadata)
-            else:
-                alembic_upgrade(database_manager.test_engine.url)
+            database_manager = await stack.enter_async_context(
+                _async_test_engine_ctx(cfg, worker_id, db_management=not cfg.skip_db_management),
+            )
 
             test_engines.append(database_manager.test_engine)
 
@@ -151,13 +157,9 @@ def setup_function_sync(
                 test_engines.append(None)
                 continue
 
-            database_manager = stack.enter_context(_test_engine_ctx(cfg, worker_id))
-            database_manager.prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
-
-            if pytestconfig.getoption('nomigrations'):
-                database_manager.create_tables(cfg.metadata)
-            else:
-                alembic_upgrade(database_manager.test_engine.url)
+            database_manager = stack.enter_context(
+                _test_engine_ctx(cfg, worker_id, db_management=False),
+            )
 
             test_engines.append(database_manager.test_engine)
 
@@ -179,13 +181,9 @@ async def setup_function_async(
                 test_engines.append(None)
                 continue
 
-            database_manager = await stack.enter_async_context(_async_test_engine_ctx(cfg, worker_id))
-            await database_manager.async_prepare_test_databases(create_db=pytestconfig.getoption('create_db'))
-
-            if pytestconfig.getoption('nomigrations'):
-                await database_manager.async_create_tables(cfg.metadata)
-            else:
-                alembic_upgrade(database_manager.test_engine.url)
+            database_manager = await stack.enter_async_context(
+                _async_test_engine_ctx(cfg, worker_id, db_management=False),
+            )
 
             test_engines.append(database_manager.test_engine)
 

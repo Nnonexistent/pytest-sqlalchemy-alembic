@@ -23,16 +23,20 @@ class ConfigValidationError(ValueError):
 
 
 class PluginConfig:
-    __slots__ = ('database_manager', 'engine', 'engine_kwargs', 'metadata', 'scope', 'session_maker')
+    __slots__ = ('create_db', 'database_manager', 'engine', 'engine_kwargs', 'metadata', 'no_migrations', 'scope', 'session_maker', 'skip_db_management')
 
     def __init__(
         self,
+        *,
         session_maker: AnySessionMaker | None,
         engine_kwargs: dict[str, Any],
         engine: AnyEngine,
         database_manager: type[BaseDatabaseManager],
         metadata: Sequence[sa.MetaData],
         scope: Literal['session', 'function'],
+        skip_db_management: bool = False,
+        create_db: bool = False,
+        no_migrations: bool = False,
     ):
         self.session_maker = session_maker
         self.engine_kwargs = engine_kwargs
@@ -40,19 +44,26 @@ class PluginConfig:
         self.database_manager = database_manager
         self.metadata = metadata
         self.scope = scope
+        self.skip_db_management = skip_db_management
+        self.create_db = create_db
+        self.no_migrations = no_migrations
 
     @classmethod
     def build_list(cls, config: pytest.Config) -> list[Self]:
         raw_value: list[str] | list[Any] = config.getini('sqlalchemy_alembic_configs')
+        create_db = config.getoption('create_db')
+        no_migrations = config.getoption('no_migrations')
+
         configs = []
         for raw_entry in raw_value:
             if (entry := IniEntry.parse(raw_entry)) is not None:
-                configs.append(cls.build(ini_entry=entry))
+                configs.append(cls.build(ini_entry=entry, create_db=create_db, no_migrations=no_migrations))
         return configs
 
     @classmethod
     def build(
         cls,
+        *,
         ini_entry: IniEntry | None = None,
         session_maker: AnySessionMaker | None = None,
         metadata: sa.MetaData | Sequence[sa.MetaData] | None = None,
@@ -61,6 +72,9 @@ class PluginConfig:
         engine_kwargs: dict[str, Any] | None = None,
         orm_loader: Callable[[], None] | None = None,
         scope: Literal['session', 'function'] | None = None,
+        skip_db_management: bool | None = None,
+        create_db: bool = False,
+        no_migrations: bool = False,
     ) -> Self:
         if ini_entry is None:
             ini_entry = IniEntry()
@@ -69,8 +83,8 @@ class PluginConfig:
         engine_kwargs = cls._parse_engine_kwargs(engine_kwargs, ini_entry.engine_kwargs)
         engine = cls._parse_engine(engine, ini_entry.engine, engine_url, ini_entry.engine_url, engine_kwargs, session_maker)
         metadata = cls._parse_metadata(metadata, ini_entry.metadata)
-        assert ini_entry.scope in ('session', 'function')
         scope = cls._parse_scope(scope, ini_entry.scope)
+        skip_db_management = ini_entry.skip_db_management if skip_db_management is None else skip_db_management
 
         if engine.url.drivername not in DATABASE_MANAGERS:
             msg = f'Unsupported database dialect: {engine.url.drivername}'
@@ -85,6 +99,9 @@ class PluginConfig:
             database_manager=database_manager,
             metadata=metadata,
             scope=scope,
+            skip_db_management=skip_db_management,
+            create_db=create_db,
+            no_migrations=no_migrations,
         )
 
     @classmethod
