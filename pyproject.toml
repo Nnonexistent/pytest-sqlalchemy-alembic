@@ -27,7 +27,7 @@ description = "Pytest plugin to manage databases, sessions and migrations for sq
 name = "pytest-sqlalchemy-alembic"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "0.1.2"
+version = "0.2.0"
 
 [dependency-groups]
 dev = [

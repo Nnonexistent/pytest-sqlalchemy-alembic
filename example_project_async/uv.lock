@@ -1202,7 +1202,7 @@ wheels = [
 
 [[package]]
 name = "pytest-sqlalchemy-alembic"
-version = "0.1.2"
+version = "0.2.0"
 source = { directory = "../" }
 dependencies = [
     { name = "alembic" },
